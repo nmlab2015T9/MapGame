@@ -20,14 +20,14 @@ function doc_keyUp(e) {
 }
 function panMap(loc) {
    playerLoc = new google.maps.LatLng(loc.lat, loc.lng);
-   console.log(loc);
+   //console.log(loc);
    map.panTo(playerLoc);
 }
 var map;
 function initialize() {
    var mapOptions = {
         center: playerLoc,
-        zoom: 17,           // set the zoom level manually
+        zoom: 19,           // set the zoom level manually
         zoomControl: false,
         scaleControl: false,
         scrollwheel: false,

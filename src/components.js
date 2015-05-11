@@ -49,7 +49,7 @@ Crafty.c('PlayerCharacter', {
     this.requires('Actor, CustomControls, Color, Collision')
       .color('rgb(20, 75, 40)')
       //.stopOnSolids()
-      .CustomControls(0.0001);
+      .CustomControls(0.000004);
   },
  
   // Registers a stop-movement function to be called when
@@ -94,19 +94,19 @@ Crafty.c('CustomControls', {
       //move.right = move.left = move.down = move.up = false;
 
       // If keys are down, set the direction
-      if (e.keyCode === Crafty.keys.RIGHT_ARROW) move.right = true;
-      if (e.keyCode === Crafty.keys.LEFT_ARROW) move.left = true;
-      if (e.keyCode === Crafty.keys.UP_ARROW) move.up = true;
-      if (e.keyCode === Crafty.keys.DOWN_ARROW) move.down = true;
+      if (e.keyCode === Crafty.keys.D) move.right = true;
+      if (e.keyCode === Crafty.keys.A) move.left = true;
+      if (e.keyCode === Crafty.keys.W) move.up = true;
+      if (e.keyCode === Crafty.keys.S) move.down = true;
 
       //this.preventTypeaheadFind(e);
     })
     .bind('KeyUp', function(e) {
       // If key is released, stop moving
-      if (e.keyCode === Crafty.keys.RIGHT_ARROW) move.right = false;
-      if (e.keyCode === Crafty.keys.LEFT_ARROW) move.left = false;
-      if (e.keyCode === Crafty.keys.UP_ARROW) move.up = false;
-      if (e.keyCode === Crafty.keys.DOWN_ARROW) move.down = false;
+      if (e.keyCode === Crafty.keys.D) move.right = false;
+      if (e.keyCode === Crafty.keys.A) move.left = false;
+      if (e.keyCode === Crafty.keys.W) move.up = false;
+      if (e.keyCode === Crafty.keys.S) move.down = false;
 
       //this.preventTypeaheadFind(e);
     });
