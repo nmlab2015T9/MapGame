@@ -28,7 +28,7 @@ Game = {
     Crafty.background('none');
 
     // Player character, placed at 5, 5 on our grid
-    Crafty.e('PlayerCharacter').at(5, 5);
+    Crafty.e('PlayerCharacter').at(35, 20);
 
  
     // Place a tree at every edge square on our grid of 16x16 tiles
