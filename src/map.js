@@ -17,27 +17,16 @@ function doc_keyUp(e) {
     panRIGHT();
    }
 }
-function panUP() {
-   playerLoc = new google.maps.LatLng(playerLoc.lat()+speed, playerLoc.lng());
-   map.panTo(playerLoc);
-}
-function panDOWN() {
-   playerLoc = new google.maps.LatLng(playerLoc.lat()-speed, playerLoc.lng());
-   map.panTo(playerLoc);
-}
-function panLEFT() {
-   playerLoc = new google.maps.LatLng(playerLoc.lat(), playerLoc.lng()-speed);
-   map.panTo(playerLoc);
-}
-function panRIGHT() {
-   playerLoc = new google.maps.LatLng(playerLoc.lat(), playerLoc.lng()+speed);
+function panMap(loc) {
+   playerLoc = new google.maps.LatLng(loc.lat, loc.lng);
+   console.log(loc);
    map.panTo(playerLoc);
 }
 var map;
 function initialize() {
    var mapOptions = {
         center: playerLoc,
-        zoom: 14,           // set the zoom level manually
+        zoom: 10,           // set the zoom level manually
         zoomControl: false,
         scaleControl: false,
         scrollwheel: false,

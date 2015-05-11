@@ -46,15 +46,15 @@ Crafty.c('Bush', {
 // This is the player-controlled character
 Crafty.c('PlayerCharacter', {
   init: function() {
-    this.requires('Actor, Fourway, Color, Collision')
-      .fourway(4)
+    this.requires('Actor, CustomControls, Color, Collision')
       .color('rgb(20, 75, 40)')
-      .stopOnSolids();
+      //.stopOnSolids()
+      .CustomControls(0.01);
   },
  
   // Registers a stop-movement function to be called when
   //  this entity hits an entity with the "Solid" component
-  stopOnSolids: function() {
+  /*stopOnSolids: function() {
     this.onHit('Solid', this.stopMovement);
  
     return this;
@@ -67,5 +67,50 @@ Crafty.c('PlayerCharacter', {
       this.x -= this._movement.x;
       this.y -= this._movement.y;
     }
+  }*/
+});
+
+
+Crafty.c('CustomControls', {
+  _loc: {lat: -34.377, lng: 150.644},
+  __move: {left: false, right: false, up: false, down: false},    
+  _speed: 0.01,
+
+  CustomControls: function(speed) {
+    if (speed) this._speed = speed;
+    var move = this.__move;
+
+    this.bind('EnterFrame', function() {
+      // Move the player in a direction depending on the booleans
+      // Only move the player in one direction at a time (up/down/left/right)
+      if (move.right) this._loc.lng += this._speed;
+      if (move.left) this._loc.lng -= this._speed;
+      if (move.up) this._loc.lat += this._speed;
+      if (move.down) this._loc.lat -= this._speed;
+      panMap(this._loc);
+    })
+    .bind('KeyDown', function(e) {
+      // Default movement booleans to false
+      //move.right = move.left = move.down = move.up = false;
+
+      // If keys are down, set the direction
+      if (e.keyCode === Crafty.keys.RIGHT_ARROW) move.right = true;
+      if (e.keyCode === Crafty.keys.LEFT_ARROW) move.left = true;
+      if (e.keyCode === Crafty.keys.UP_ARROW) move.up = true;
+      if (e.keyCode === Crafty.keys.DOWN_ARROW) move.down = true;
+
+      //this.preventTypeaheadFind(e);
+    })
+    .bind('KeyUp', function(e) {
+      // If key is released, stop moving
+      if (e.keyCode === Crafty.keys.RIGHT_ARROW) move.right = false;
+      if (e.keyCode === Crafty.keys.LEFT_ARROW) move.left = false;
+      if (e.keyCode === Crafty.keys.UP_ARROW) move.up = false;
+      if (e.keyCode === Crafty.keys.DOWN_ARROW) move.down = false;
+
+      //this.preventTypeaheadFind(e);
+    });
+
+    return this;
   }
 });
