@@ -1,5 +1,5 @@
 var playerLoc = new google.maps.LatLng(-34.377, 150.644);
-var speed = 0.01;
+//var speed = 0.01;
 // define a handler
 function doc_keyUp(e) {
    // this would test for whichever key is 40 and the ctrl key at the same time
@@ -26,7 +26,7 @@ var map;
 function initialize() {
    var mapOptions = {
         center: playerLoc,
-        zoom: 10,           // set the zoom level manually
+        zoom: 14,           // set the zoom level manually
         zoomControl: false,
         scaleControl: false,
         scrollwheel: false,

@@ -49,7 +49,7 @@ Crafty.c('PlayerCharacter', {
     this.requires('Actor, CustomControls, Color, Collision')
       .color('rgb(20, 75, 40)')
       //.stopOnSolids()
-      .CustomControls(0.01);
+      .CustomControls(0.001);
   },
  
   // Registers a stop-movement function to be called when
