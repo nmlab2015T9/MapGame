@@ -38,4 +38,42 @@ function initialize() {
    };
    map = new google.maps.Map(document.getElementById("map_canvas"),
          mapOptions);
+
+   var mystyle = [
+    {
+      stylers: [
+      { hue: "#ff0000" },
+      { saturation: 100 }
+      ]
+    },{
+      featureType: "road",
+      elementType: "geometry",
+      stylers: [
+      { hue: "#66F934" },
+      { lightness: 100 },
+      //{ visibility: "simplified" }
+      ]
+    },{
+      featureType: "water",
+      elementType: "geometry",
+      stylers: [
+      { color: "#BBBBFF" }
+      ]
+    },{
+      featureType: "All",
+      elementType: "labels",
+      stylers: [
+      { visibility: "off" }
+      ]
+    },{
+      featureType: "road",
+      elementType: "labels",
+      stylers: [
+      { visibility: "off" }
+      ]
+    }
+    ];
+
+    
+    map.setOptions({styles: mystyle})
 }
