@@ -32,7 +32,7 @@ function initialize() {
 			]
 		},{
 			featureType: "road",
-			elementType: "geometry",saAS
+			elementType: "geometry",
 			stylers: [
 			{ hue: "#66F934" },
 			{ lightness: 100 },
