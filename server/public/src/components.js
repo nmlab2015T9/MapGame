@@ -5,13 +5,13 @@ Crafty.c('Grid', {
     this.attr({
       w: Game.map_grid.tile.width,
       h: Game.map_grid.tile.height
-    });
+    })
   },
- 
+
   // Locate this entity at the given position on the grid
   at: function(x, y) {
     if (x === undefined && y === undefined) {
-      return { x: this.x/Game.map_grid.tile.width, y: this.y/Game.map_grid.tile.height };
+      return { x: this.x/Game.map_grid.tile.width, y: this.y/Game.map_grid.tile.height }
     } else {
       this.attr({ x: x * Game.map_grid.tile.width, y: y * Game.map_grid.tile.height });
       return this;
@@ -26,110 +26,232 @@ Crafty.c('Actor', {
     this.requires('2D, Canvas, Grid');
   },
 });
- 
+
 // A Tree is just an Actor with a certain color
-Crafty.c('Buildings', {
+Crafty.c('Tree', {
   init: function() {
     this.requires('Actor, Color, Solid')
-      .color('blue');
+        .color('rgb(20, 125, 40)');
   },
 });
 
-Crafty.c('GG', {
+// A Bush is just an Actor with a certain color
+Crafty.c('Bush', {
   init: function() {
     this.requires('Actor, Color, Solid')
-        .color('red');
+        .color('rgb(20, 185, 40)');
   },
 });
 
- 
 // This is the player-controlled character
 Crafty.c('PlayerCharacter', {
-  init: function() {
-    this.requires('Actor, Fourway, Color, Collision')
-      .color('rgb(20, 75, 40)')
-      .fourway(3)
-      .stopOnSolids()
-      .onHit('Bullet', this.gotShot);
-  },
- 
-  // Registers a stop-movement function to be called when
-  //  this entity hits an entity with the "Solid" component
-  stopOnSolids: function() {
-    this.onHit('Solid', this.stopMovement);
- 
-    return this;
-  },
- 
-  // Stops the movement
-  stopMovement: function() {
-    this._speed = 0;
-    if (this._movement) {
-      this.x -= this._movement.x;
-      this.y -= this._movement.y;
+      /*init: function() {
+       this.requires('Actor, CustomControls, Color, Collision')
+       .color('rgb(20, 75, 40)')
+       //.stopOnSolids()
+       .CustomControls(0.000004);*/
+      init: function() {
+        this.requires('Actor, Fourway, Color, spr_player, SpriteAnimation')
+            .fourway(4)
+            .animate('PlayerMovingUp',    7, 1, 0)
+            .animate('PlayerMovingRight', 7, 3, 0)
+            .animate('PlayerMovingDown',  7, 6, 0)
+            .animate('PlayerMovingLeft',  7, 4, 0);
+
+        var animation_speed = 8;
+        this.bind('NewDirection', function(data) {
+          if (data.x > 0) {
+            this.animate('PlayerMovingRight', animation_speed, -1);
+          } else if (data.x < 0) {
+            this.animate('PlayerMovingLeft', animation_speed, -1);
+          } else if (data.y > 0) {
+            this.animate('PlayerMovingDown', animation_speed, -1);
+          } else if (data.y < 0) {
+            this.animate('PlayerMovingUp', animation_speed, -1);
+          } else {
+            this.stop();
+          }
+        });
+      }
+
     }
-  },
 
-  //
-  gotShot: function(who) {
+    // Registers a stop-movement function to be called when
+    //  this entity hits an entity with the "Solid" component
+    /*stopOnSolids: function() {
+     this.onHit('Solid', this.stopMovement);
 
+     return this;
+     },
+
+     // Stops the movement
+     stopMovement: function() {
+     this._speed = 0;
+     if (this._movement) {
+     this.x -= this._movement.x;
+     this.y -= this._movement.y;
+     }
+     }
+     }*/);
+Crafty.scene('Game', function() {
+  // A 2D array to keep track of all occupied tiles
+  this.occupied = new Array(Game.map_grid.width);
+  for (var i = 0; i < Game.map_grid.width; i++) {
+    this.occupied[i] = new Array(Game.map_grid.height);
+    for (var y = 0; y < Game.map_grid.height; y++) {
+      this.occupied[i][y] = false;
+    }
   }
-});
 
-Crafty.c('Bullet', {
-  init: function() {
-    this.requires('Actor, Color, Solid, Collision')
-      .color('black')
-      .stopOnSolids();
-  },
+  // Player character, placed at 5, 5 on our grid
+  this.player = Crafty.e('PlayerCharacter').at(5, 5);
+  this.occupied[this.player.at().x][this.player.at().y] = true;
 
-  stopOnSolids: function() {
-    this.onHit('Solid', this.destroy);
- 
-    return this;
-  }
-});
+  // Place a tree at every edge square on our grid of 16x16 tiles
+  /*for (var x = 0; x < Game.map_grid.width; x++) {
+   for (var y = 0; y < Game.map_grid.height; y++) {
+   var at_edge = x == 0 || x == Game.map_grid.width - 1 || y == 0 || y == Game.map_grid.height - 1;
+
+   if (at_edge) {
+   // Place a tree entity at the current tile
+   Crafty.e('Tree').at(x, y);
+   this.occupied[x][y] = true;
+   } else if (Math.random() < 0.06 && !this.occupied[x][y]) {
+   // Place a bush entity at the current tile
+   Crafty.e('Bush').at(x, y);
+   this.occupied[x][y] = true;
+   }
+   }
+   }*/
+
+  // Generate up to five villages on the map in random locations
+  /*var max_villages = 5;
+   for (var x = 0; x < Game.map_grid.width; x++) {
+   for (var y = 0; y < Game.map_grid.height; y++) {
+   if (Math.random() < 0.02) {
+   if (Crafty('Village').length < max_villages && !this.occupied[x][y]) {
+   Crafty.e('Village').at(x, y);
+   }
+   }
+   }
+   }*/
+
+  // Show the victory screen once all villages are visisted
+  /*this.show_victory = this.bind('VillageVisited', function() {
+   if (!Crafty('Village').length) {
+   Crafty.scene('Victory');
+   }
+   });*/
+}/*, function() {
+ // Remove our event binding from above so that we don't
+ //  end up having multiple redundant event watchers after
+ //  multiple restarts of the game
+ this.unbind('VillageVisited', this.show_victory);
+ }*/);
 
 
-/*Crafty.c('CustomControls', {
-  _loc: {lat: 25.0159, lng: 121.5392},
-  __move: {left: false, right: false, up: false, down: false},    
-  _speed: 0.005,
+// Victory scene
+// -------------
+// Tells the player when they've won and lets them start a new game
+/*Crafty.scene('Victory', function() {
+ // Display some text in celebration of the victory
+ Crafty.e('2D, DOM, Text')
+ .attr({ x: 0, y: 0 })
+ .text('Victory!');
 
-  CustomControls: function(speed) {
-    if (speed) this._speed = speed;
-    var move = this.__move;
+ // Watch for the player to press a key, then restart the game
+ //  when a key is pressed
+ this.restart_game = this.bind('KeyDown', function() {
+ Crafty.scene('Game');
+ });
+ }, function() {
+ // Remove our event binding from above so that we don't
+ //  end up having multiple redundant event watchers after
+ //  multiple restarts of the game
+ this.unbind('KeyDown', this.restart_game);
+ });*/
 
-    this.bind('EnterFrame', function() {
-      // Move the player in a direction depending on the booleans
-      // Only move the player in one direction at a time (up/down/left/right)
-      if (move.right) this.x += this._speed;
-      if (move.left) this.x -= this._speed;
-      if (move.up) this.y += this._speed;
-      if (move.down) this.y -= this._speed;
-    })
-    .bind('KeyDown', function(e) {
-      // Default movement booleans to false
-      //move.right = move.left = move.down = move.up = false;
+// Loading scene
+// -------------
+// Handles the loading of binary assets such as images and audio files
+Crafty.scene('Loading', function(){
+  // Load our sprite map image
+  Crafty.load(['http://desolate-caverns-4829.herokuapp.com/assets/16x16_forest_1.gif', 'http://38.media.tumblr.com/5927504cea37822c6b0c41fdc1f598b2/tumblr_inline_mgfa0kncp21rb6zcv.png', 'http://desolate-caverns-4829.herokuapp.com/assets/door_knock_3x.mp3', 'http://desolate-caverns-4829.herokuapp.com/assets/door_knock_3x.ogg', 'http://desolate-caverns-4829.herokuapp.com/assets/door_knock_3x.aac'], function(){
+    // Once the images are loaded...
 
-      // If keys are down, set the direction
-      if (e.keyCode === Crafty.keys.D) move.right = true;
-      if (e.keyCode === Crafty.keys.A) move.left = true;
-      if (e.keyCode === Crafty.keys.W) move.up = true;
-      if (e.keyCode === Crafty.keys.S) move.down = true;
-
-      //this.preventTypeaheadFind(e);
-    })
-    .bind('KeyUp', function(e) {
-      // If key is released, stop moving
-      if (e.keyCode === Crafty.keys.D) move.right = false;
-      if (e.keyCode === Crafty.keys.A) move.left = false;
-      if (e.keyCode === Crafty.keys.W) move.up = false;
-      if (e.keyCode === Crafty.keys.S) move.down = false;
-
-      //this.preventTypeaheadFind(e);
+    // Define the individual sprites in the image
+    // Each one (spr_tree, etc.) becomes a component
+    // These components' names are prefixed with "spr_"
+    //  to remind us that they simply cause the entity
+    //  to be drawn with a certain sprite
+    Crafty.sprite(16, 'http://desolate-caverns-4829.herokuapp.com/assets/16x16_forest_1.gif', {
+      spr_tree:    [0, 0],
+      spr_bush:    [1, 0],
+      spr_village: [0, 1]
     });
 
-    return this;
-  }
-});*/
+    // Define the PC's sprite to be the first sprite in the third row of the
+    //  animation sprite map
+    Crafty.sprite(56,63, 'http://38.media.tumblr.com/5927504cea37822c6b0c41fdc1f598b2/tumblr_inline_mgfa0kncp21rb6zcv.png', {
+      spr_player:  [0, 7],
+    }, 0, 2);
+
+    // Define our sounds for later use
+    //Crafty.audio.add({
+    //  knock: ['http://desolate-caverns-4829.herokuapp.com/assets/door_knock_3x.mp3']
+    //});
+
+    // Draw some text for the player to see in case the file
+    //  takes a noticeable amount of time to load
+    Crafty.e('2D, DOM, Text')
+        .attr({ x: 0, y: Game.height()/2 - 24, w: Game.width() })
+        .text('Loading...');
+
+    // Now that our sprites are ready to draw, start the game
+    Crafty.scene('Game');
+  })
+});
+
+/*Crafty.c('CustomControls', {
+ _loc: {lat: 25.0159, lng: 121.5392},
+ __move: {left: false, right: false, up: false, down: false},
+ _speed: 0.005,
+
+ CustomControls: function(speed) {
+ if (speed) this._speed = speed;
+ var move = this.__move;
+
+ this.bind('EnterFrame', function() {
+ // Move the player in a direction depending on the booleans
+ // Only move the player in one direction at a time (up/down/left/right)
+ if (move.right) this._loc.lng += this._speed;
+ if (move.left) this._loc.lng -= 	this._speed;
+ if (move.up) this._loc.lat += this._speed;
+ if (move.down) this._loc.lat -= this._speed;
+ //panMap(this._loc);
+ })
+ .bind('KeyDown', function(e) {
+ // Default movement booleans to false
+ //move.right = move.left = move.down = move.up = false;
+
+ // If keys are down, set the direction
+ if (e.keyCode === Crafty.keys.D) move.right = true;
+ if (e.keyCode === Crafty.keys.A) move.left = true;
+ if (e.keyCode === Crafty.keys.W) move.up = true;
+ if (e.keyCode === Crafty.keys.S) move.down = true;
+
+ //this.preventTypeaheadFind(e);
+ })
+ .bind('KeyUp', function(e) {
+ // If key is released, stop moving
+ if (e.keyCode === Crafty.keys.D) move.right = false;
+ if (e.keyCode === Crafty.keys.A) move.left = false;
+ if (e.keyCode === Crafty.keys.W) move.up = false;
+ if (e.keyCode === Crafty.keys.S) move.down = false;
+
+ //this.preventTypeaheadFind(e);
+ });
+
+ return this;
+ }
+ });*/
