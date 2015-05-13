@@ -9,6 +9,7 @@ router.get('/', function (req, res) {
             console.log("Bad image path");
             return
         }
+        console.log(pixels.get(0, 0, 0));
     });
     res.render('game.html');
 });

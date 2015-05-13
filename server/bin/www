@@ -7,7 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('server:server');
 var http = require('http');
-
+var getPixels = require("get-pixels");
 
 /**
  * Get port from environment and store in Express.
@@ -32,15 +32,78 @@ server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
+
+
+
 /**
  * Socketssssss
  */
-io.on('connection', function(socket){
-  socket.on('chat message', function(msg){
-    console.log(msg);
-    io.emit('chat message', msg);
+
+userCount = 0;
+stat = 'wait';
+
+mapArray = {'map': []};
+
+io.on('connection', function(client){
+  userCount++;
+  var clientId = client.sessionId;
+  console.log('a user connected, from: ' + clientId + ', total user count = ' + userCount);
+  client.on('center', function(center) {
+    console.log('user specified center: (' + center.lat + ', ' + center.lng + ')');
+    getPixels("http://maps.googleapis.com/maps/api/staticmap?center=" + center.lat + "," + center.lng + "&zoom=18&size=640x640&sensor=false&style=feature:all%7Celement:all%7Chue:0xff0000%7Csaturation:100&style=feature:road%7Celement:geometry%7Chue:0x66f934%7Clightness:100&style=feature:water%7Celement:geometry%7Ccolor:0xbbbbff&style=feature:all%7Celement:labels%7Cvisibility:off&style=feature:road%7Celement:labels%7Cvisibility:off", function(err, pixels) {
+      if(err) {
+        console.error("Bad image path!!!!!");
+        return
+      }
+
+      for(var x = 0; x < 640; x++) {
+        for (var y = 0; y < 640; y++) {
+          //console.log(pixels.get(x,y,2));
+
+
+          // white for road = 0
+          if (pixels.get(x,y,0) >= 250 && pixels.get(x,y,0) >= 250 && pixels.get(x,y,0) >= 250)
+            mapArray.map[y*640+x] = 0;
+
+
+          else if (pixels.get(x,y,0) >= 250) {
+              // red for ground = 1
+              if (pixels.get(x, y, 0) <= 215 && pixels.get(x, y, 0) <= 215)
+                mapArray.map[y * 640 + x] = 1;
+              // pink for buildings = 2   (255, 224, 224)
+              else
+                mapArray.map[y * 640 + x] = 2;
+          }
+
+          // blue for water = 3
+          else if (pixels.get(x,y,0) == 186 && pixels.get(x,y,0) == 186 && pixels.get(x,y,0) >= 250)
+            mapArray.map[y*640+x] = 3;
+
+
+          // default....
+          else {
+            console.error("the img contains -1 value!!!");
+            mapArray.map[y * 640 + x] = -1;
+          }
+
+          io.emit('mapArray', mapArray);
+        }
+      }
+    });
+  });
+  client.on('frame', function(data){
+    io.emit('frame', data);
+  });
+  client.on('disconnect', function(){
+    userCount--;
+    console.log(clientId + 'user disconnected, total user = ' + userCount);
   });
 });
+
+
+
+
+
 /**
  * Normalize a port into a number, string, or false.
  */

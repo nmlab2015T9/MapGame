@@ -13,11 +13,12 @@ var choosedLocation = startLoc;
 var marker
 
 function initialize() {
+
     var mapOptions = {
         center: startLoc,
         zoom: 5,           // set the zoom level manually
         keyboardShortcuts: false,
-        mapTypeId: google.maps.MapTypeId.ROADMAP
+        mapTypeId: google.maps.MapTqypeId.ROADMAP
     };
     map = new google.maps.Map(document.getElementById("map_canvas"),
         mapOptions);
