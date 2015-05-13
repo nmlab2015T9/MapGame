@@ -5,13 +5,13 @@ Crafty.c('Grid', {
     this.attr({
       w: Game.map_grid.tile.width,
       h: Game.map_grid.tile.height
-    })
+    });
   },
  
   // Locate this entity at the given position on the grid
   at: function(x, y) {
     if (x === undefined && y === undefined) {
-      return { x: this.x/Game.map_grid.tile.width, y: this.y/Game.map_grid.tile.height }
+      return { x: this.x/Game.map_grid.tile.width, y: this.y/Game.map_grid.tile.height };
     } else {
       this.attr({ x: x * Game.map_grid.tile.width, y: y * Game.map_grid.tile.height });
       return this;
@@ -28,33 +28,27 @@ Crafty.c('Actor', {
 });
  
 // A Tree is just an Actor with a certain color
-Crafty.c('Tree', {
+Crafty.c('Buildings', {
   init: function() {
     this.requires('Actor, Color, Solid')
-      .color('rgb(20, 125, 40)');
+      .color('red');
   },
 });
- 
-// A Bush is just an Actor with a certain color
-Crafty.c('Bush', {
-  init: function() {
-    this.requires('Actor, Color, Solid')
-      .color('rgb(20, 185, 40)');
-  },
-});
+
  
 // This is the player-controlled character
 Crafty.c('PlayerCharacter', {
   init: function() {
-    this.requires('Actor, CustomControls, Color, Collision')
+    this.requires('Actor, Fourway, Color, Collision')
       .color('rgb(20, 75, 40)')
-      //.stopOnSolids()
-      .CustomControls(0.000004);
+      .fourway(3)
+      .stopOnSolids()
+      .onHit('Bullet', this.gotShot);
   },
  
   // Registers a stop-movement function to be called when
   //  this entity hits an entity with the "Solid" component
-  /*stopOnSolids: function() {
+  stopOnSolids: function() {
     this.onHit('Solid', this.stopMovement);
  
     return this;
@@ -67,11 +61,30 @@ Crafty.c('PlayerCharacter', {
       this.x -= this._movement.x;
       this.y -= this._movement.y;
     }
-  }*/
+  },
+
+  //
+  gotShot: function(who) {
+
+  }
+});
+
+Crafty.c('Bullet', {
+  init: function() {
+    this.requires('Actor, Color, Solid, Collision')
+      .color('black')
+      .stopOnSolids();
+  },
+
+  stopOnSolids: function() {
+    this.onHit('Solid', this.destroy);
+ 
+    return this;
+  }
 });
 
 
-Crafty.c('CustomControls', {
+/*Crafty.c('CustomControls', {
   _loc: {lat: 25.0159, lng: 121.5392},
   __move: {left: false, right: false, up: false, down: false},    
   _speed: 0.005,
@@ -83,11 +96,10 @@ Crafty.c('CustomControls', {
     this.bind('EnterFrame', function() {
       // Move the player in a direction depending on the booleans
       // Only move the player in one direction at a time (up/down/left/right)
-      if (move.right) this._loc.lng += this._speed;
-      if (move.left) this._loc.lng -= this._speed;
-      if (move.up) this._loc.lat += this._speed;
-      if (move.down) this._loc.lat -= this._speed;
-      panMap(this._loc);
+      if (move.right) this.x += this._speed;
+      if (move.left) this.x -= this._speed;
+      if (move.up) this.y += this._speed;
+      if (move.down) this.y -= this._speed;
     })
     .bind('KeyDown', function(e) {
       // Default movement booleans to false
@@ -113,4 +125,4 @@ Crafty.c('CustomControls', {
 
     return this;
   }
-});
+});*/
