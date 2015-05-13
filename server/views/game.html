@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="/stylesheets/game.css">
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+
+  <script src="/lib/crafty.js"></script>
+  <script src="/src/game.js"></script>
+  <script src="/src/components.js"></script>
+  <script>
+    window.addEventListener('load', Game.start);
+  </script>
+</head>
+<body>
+<div id="container">
+	<div id="cr-stage"></div>
+	<div id="map">
+        <!-- src="http://maps.googleapis.com/maps/api/staticmap?center=25.0159,121.5392&zoom=19&size=640x640&sensor=false&style=feature:all%7Celement:all%7Chue:0xff0000%7Csaturation:100&style=feature:road%7Celement:geometry%7Chue:0x66f934%7Clightness:100&style=feature:water%7Celement:geometry%7Ccolor:0xbbbbff&style=feature:all%7Celement:labels%7Cvisibility:off&style=feature:road%7Celement:labels%7Cvisibility:off"-->
+        <img id="mapimg" src="http://maps.googleapis.com/maps/api/staticmap?center=25.0159,121.5392&zoom=19&size=640x640&sensor=false&style=feature:all%7Celement:all%7Chue:0xff0000%7Csaturation:100&style=feature:road%7Celement:geometry%7Chue:0x66f934%7Clightness:100&style=feature:water%7Celement:geometry%7Ccolor:0xbbbbff&style=feature:all%7Celement:labels%7Cvisibility:off&style=feature:road%7Celement:labels%7Cvisibility:off">
+        <!--canvas id="myCanvas" width="600" height="600"></canvas-->
+    </div>
+</div>
+</body>
+</html>
