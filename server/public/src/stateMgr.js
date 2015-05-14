@@ -27,13 +27,6 @@ function mapArrayCome(){
 	document.getElementById("profileImage").style.display = "inherit";
 	document.getElementById("positionChooser").style.display = "none";
 	marker.setVisible(false);
-	map.setOptions({zoomControl: false,
-					scaleControl: false,
-					scrollwheel: false,
-					disableDoubleClickZoom: true,
-					draggable: false,
-					keyboardShortcuts: false,
-					})
 	console.log("Game Initializing!!");
 	Game.start();
 }
