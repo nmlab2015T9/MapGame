@@ -78,7 +78,7 @@
 		sendFBID(response.id);
 		console.log('Successful login for: ' + response.name);
 		document.getElementById('status').innerHTML =
-			'Welcome to Map Fight , ' + response.name + '!</br>Please Wait...';
+			'Welcome to Map Fight , ' + response.name + '!</br>Please Wait...Game Initializing...';
 		document.getElementById('status2').innerHTML =
 			'Welcome to Map Fight , ' + response.name + '!</br>';
 		ID = response.id;

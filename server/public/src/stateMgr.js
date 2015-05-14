@@ -9,6 +9,7 @@ function stateCome() {
 		document.getElementById("positionChooser").style.display = "inline";
 	}
 	else if(gameState == "wait"){
+		//wait for mapArrayCome()
 		
 	}
 	else if(gameState == "start"){
@@ -21,5 +22,18 @@ function stateCome() {
 }
 
 function mapArrayCome(){
+	console.log("Map array comes~~");
+	document.getElementById("cr-stage").style.display = "inherit";
+	document.getElementById("profileImage").style.display = "inherit";
+	document.getElementById("positionChooser").style.display = "none";
+	marker.setVisible(false);
+	map.setOptions({zoomControl: false,
+					scaleControl: false,
+					scrollwheel: false,
+					disableDoubleClickZoom: true,
+					draggable: false,
+					keyboardShortcuts: false,
+					})
+	console.log("Game Initializing!!");
 	Game.start();
 }
