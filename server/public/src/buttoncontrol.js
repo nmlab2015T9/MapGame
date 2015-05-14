@@ -6,11 +6,11 @@ function PButtonOnClick() {
 function CButtonOnClick() {
 	map.panTo(choosedLocation);
 	setTimeout("map.setZoom(18)",500);
-	document.getElementById("cr-stage").style.display = "inherit";
-	document.getElementById("profileImage").style.display = "inherit";
-	document.getElementById("positionChooser").style.display = "none";
+	document.getElementById("PButton").style.display = "none";
+	document.getElementById("CButton").style.display = "none";
+	document.getElementById("positionTitle").style.display = "none";
+	document.getElementById('status2').innerHTML ='Game Initializing...Please Wait...';
 	marker.setVisible(false);
-	
 	map.setOptions({zoomControl: false,
 					scaleControl: false,
 					scrollwheel: false,
