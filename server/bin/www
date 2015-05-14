@@ -39,8 +39,11 @@ server.on('listening', onListening);
  * Socketssssss
  */
 
-userCount = 0;
 stat = 'one';
+statistic = {
+  'numPlayer': 0,
+  ''
+};
 
 mapArray = {'map': []};
 map2D = new Array(640);
@@ -49,12 +52,18 @@ for (var i = 0; i < 640; ++i) {
 }
 
 io.on('connection', function(client){
-  userCount++;
+  client.id;
   var clientFBId;
   client.on('fb', function(fbid) {
     clientFBId = fbid.id;
-    io.emit('gameState', stat);
-  })
+    if (stat == 'one') {
+      ('gameState', stat);
+      stat = 'wait';
+    }
+    else {
+      io.emit('gameState', stat);
+    }
+  });
   console.log('a user connected, from: ' + clientId + ', total user count = ' + userCount);
   client.on('center', function(center) {
     console.log('user specified center: (' + center.lat + ', ' + center.lng + ')');
@@ -106,7 +115,6 @@ io.on('connection', function(client){
     });
   });
   client.on('disconnect', function(){
-    userCount--;
     console.log(clientId + 'user disconnected, total user = ' + userCount);
   });
 });

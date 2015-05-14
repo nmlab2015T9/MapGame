@@ -18,15 +18,23 @@ socket.on('mapArray', function(mapArray) {
             map2D[x][y] = mapArray.map[x*mapSizeX + y];
         }
     }
+    mapArrayCome();
     //console.log(mapArray.map);
 });
 
 socket.on('gameState', function(gs) {
     gameState = gs.gameState;
+    stateCome();
 });
 
-function sendFrame(x, y, mius) {
+function sendFrame(x, y) {
     socket.emit('frame', {
         'loc': [x, y]
+    });
+}
+function sendCenter(x, y,) {
+    socket.emit('center', {
+        'lat': x,
+        'lng': y
     });
 }
