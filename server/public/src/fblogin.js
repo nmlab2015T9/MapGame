@@ -70,19 +70,17 @@
   // Here we run a very simple test of the Graph API after login is
   // successful.  See statusChangeCallback() for when this call is made.
   
+  ID = 0;
+  
   function testAPI() {
     console.log('Welcome!  Fetching your information.... ');
     FB.api('/me', function(response) {
-      console.log('Successful login for: ' + response.name);
-
-      document.getElementById('status2').innerHTML =
-        'Welcome to Map Fight , ' + response.name + '!</br>';
-	var im = document.getElementById("profileImage").setAttribute("src", "http://graph.facebook.com/" + response.id + "/picture?type=normal");
-	var im = document.getElementById("profileImage").setAttribute("style", "width:50px;height:50px");
-	var im = document.getElementById("profileImage").style.display = "none";
-	document.getElementById("titleAndLogIn").style.display = "none";
-	document.getElementById("map_canvas").setAttribute("style","-webkit-filter:blur(0px)");
-	document.getElementById("positionChooser").style.display = "inline";
-      sendFBID(response.id);
+		sendFBID(response.id);
+		console.log('Successful login for: ' + response.name);
+		document.getElementById('status').innerHTML =
+			'Welcome to Map Fight , ' + response.name + '!</br>Please Wait...';
+		document.getElementById('status2').innerHTML =
+			'Welcome to Map Fight , ' + response.name + '!</br>';
+		ID = response.id;
     });
   }
