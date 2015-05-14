@@ -54,19 +54,23 @@ for (var i = 0; i < 640; ++i) {
 
 io.on('connection', function(client){
   var clientId = client.id;
-  statistic.numPlayer++;
   var clientFBId;
   client.on('fb', function(fbid) {
+    statistic.numPlayer++;
+    console.log('a user connected, from: ' + clientId + ', total user count = ' +   statistic.numPlayer);
     clientFBId = fbid.id;
     if (stat == 'one') {
       io.to(clientId).emit('gameState', { 'gameState': stat });
       stat = 'wait';
     }
+    else if (stat == 'start') {
+      io.to(clientId).emit('gameState', stat);
+      io.to(clientId).emit('mapArray', mapArray);
+    }
     else {
       io.to(clientId).emit('gameState', stat);
     }
   });
-  console.log('a user connected, from: ' + clientId + ', total user count = ' +   statistic.numPlayer);
   client.on('center', function(center) {
     console.log('user specified center: (' + center.lat + ', ' + center.lng + ')');
     getPixels("http://maps.googleapis.com/maps/api/staticmap?center=" + center.lat + "," + center.lng + "&zoom=18&size=640x640&sensor=false&style=feature:all%7Celement:all%7Chue:0xff0000%7Csaturation:100&style=feature:road%7Celement:geometry%7Chue:0x66f934%7Clightness:100&style=feature:water%7Celement:geometry%7Ccolor:0xbbbbff&style=feature:all%7Celement:labels%7Cvisibility:off&style=feature:road%7Celement:labels%7Cvisibility:off", function(err, pixels) {
@@ -116,7 +120,8 @@ io.on('connection', function(client){
       console.log('static map pixel parsed, generate myX, myY...');
       myX = Math.round(Math.random()*640);
       myY = Math.round(Math.random()*640);
-      while (map2D[myX-1][myY+1] === 0 && map2D[myX][myY+1] === 0 && map2D[myX+1][myY+1] === 0 &&
+      while (x <= 638 && y <=638 &&
+             map2D[myX-1][myY+1] === 0 && map2D[myX][myY+1] === 0 && map2D[myX+1][myY+1] === 0 &&
              map2D[myX-1][myY] === 0 && map2D[myX][myY] === 0 && map2D[myX+1][myY] === 0 &&
              map2D[myX-1][myY-1] === 0 && map2D[myX][myY-1] === 0 && map2D[myX+1][myY-1] === 0) {
         myX = Math.round(Math.random()*640);
@@ -136,7 +141,9 @@ io.on('connection', function(client){
 
       console.log('=====SEND TO EVERY CLIENT!!!=====');
 
+      stat = 'start';
       io.emit('mapArray', mapArray);
+
 
     });
   });
