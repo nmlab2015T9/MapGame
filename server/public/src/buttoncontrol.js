@@ -6,7 +6,6 @@ function PButtonOnClick() {
 function CButtonOnClick() {
 	map.panTo(choosedLocation);
 	setTimeout("map.setZoom(18)",500);
-	Game.start();
 	document.getElementById("cr-stage").style.display = "inherit";
 	document.getElementById("profileImage").style.display = "inherit";
 	document.getElementById("positionChooser").style.display = "none";
@@ -19,4 +18,5 @@ function CButtonOnClick() {
 					draggable: false,
 					keyboardShortcuts: false,
 					})
+	sendCenter(choosedLocation.latitude, choosedLocation.longitude);
 }
