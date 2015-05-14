@@ -81,6 +81,9 @@
 			'Welcome to Map Fight , ' + response.name + '!</br>Please Wait...Game Initializing...';
 		document.getElementById('status2').innerHTML =
 			'Welcome to Map Fight , ' + response.name + '!</br>';
+		var im = document.getElementById("profileImage").setAttribute("src", "http://graph.facebook.com/" + ID + "/picture?type=normal");
+		var im = document.getElementById("profileImage").setAttribute("style", "width:50px;height:50px");
+		var im = document.getElementById("profileImage").style.display = "none";
 		ID = response.id;
     });
   }
