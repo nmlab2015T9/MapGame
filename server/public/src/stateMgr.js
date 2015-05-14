@@ -21,12 +21,12 @@ function stateCome() {
 
 function mapArrayCome(){
 	console.log("Map array comes~~");
-	document.getElementById("titleAndLogIn").style.display = "none";
-	document.getElementById("map_canvas").setAttribute("style","-webkit-filter:blur(0px)");
-	document.getElementById("cr-stage").style.display = "inherit";
-	document.getElementById("profileImage").style.display = "inherit";
-	document.getElementById("positionChooser").style.display = "none";
-	marker.setVisible(false);
+	if(gameState == "wait" || gameState == "stop"){
+		setTimeout("map.setZoom(18)",500);
+		map.panTo(new google.maps.LatLng(centerLat, centerLng));
+	}
+
 	console.log("Game Initializing!!");
+	gameState = 'stop';
 	Game.start();
 }

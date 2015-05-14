@@ -42,126 +42,184 @@ server.on('listening', onListening);
 mapSizeX = 640;
 mapSizeY = 640;
 stat = 'one';
+
 statistic = {
-  'numPlayer': 0
+    'numPlayer': 0
 };
 
-mapArray = {'map': []};
+mapArray = {'map': [],
+            'birthX': 0,
+            'birthY': 0,
+            'lat': 0,
+            'lng': 0
+};
 map2D = new Array(640);
 for (var i = 0; i < 640; ++i) {
   map2D[i] = new Array(640);
 }
+DELAY = 20;
+lobbyTime = (1000/DELAY) *30;
+// this is a hash map [clientId.toString()]->{fbId: integer}
+// hash map usage: http://ppt.cc/26F5K
+clientHashMap = { id: [], lobTime: lobbyTime*DELAY/1000 };
 
 io.on('connection', function(client){
+  statistic.numPlayer++;
   var clientId = client.id;
-  var clientFBId;
-  client.on('fb', function(fbid) {
-    statistic.numPlayer++;
+    clientHashMap.id.push(clientId.toString());
+    clientHashMap[clientId.toString()] = { fbId: undefined, canPlay: 'yes', loc: [0, 0], score:0 };
+    if(stat == 'start') {
+        clientHashMap[clientId.toString()].canPlay = 'no';
+    }
     console.log('a user connected, from: ' + clientId + ', total user count = ' +   statistic.numPlayer);
-    clientFBId = fbid.id;
-    if (stat == 'one') {
-      io.to(clientId).emit('gameState', { 'gameState': stat });
-      stat = 'wait';
-    }
-    else if (stat == 'start') {
-      io.to(clientId).emit('gameState', stat);
-      io.to(clientId).emit('mapArray', mapArray);
-    }
-    else {
-      io.to(clientId).emit('gameState', stat);
-    }
-  });
-  client.on('center', function(center) {
-    console.log('user specified center: (' + center.lat + ', ' + center.lng + ')');
-    getPixels("http://maps.googleapis.com/maps/api/staticmap?center=" + center.lat + "," + center.lng + "&zoom=18&size=640x640&sensor=false&style=feature:all%7Celement:all%7Chue:0xff0000%7Csaturation:100&style=feature:road%7Celement:geometry%7Chue:0x66f934%7Clightness:100&style=feature:water%7Celement:geometry%7Ccolor:0xbbbbff&style=feature:all%7Celement:labels%7Cvisibility:off&style=feature:road%7Celement:labels%7Cvisibility:off", function(err, pixels) {
-      if(err) {
-        console.error("Bad image path!!!!!");
-        return
-      }
-      for(var x = 0; x < 640; x++) {
-        for (var y = 0; y < 640; y++) {
-          //console.log(pixels.get(x,y,2));
-
-
-          // white for road = 0
-          if (pixels.get(x, y, 0) >= 250 && pixels.get(x, y, 1) >= 250 && pixels.get(x, y, 2) >= 250)
-            map2D[x][y] = 0;
-            //mapArray.map[y * 640 + x] = 0;
-
-
-
-          else if (pixels.get(x, y, 0) >= 250) {
-            // red for ground = 1
-            if (pixels.get(x, y, 1) <= 218 && pixels.get(x, y, 2) <= 218)
-              map2D[x][y] = 0;
-            else if (pixels.get(x, y, 1) >= 226 && pixels.get(x, y, 2) >= 226)
-              map2D[x][y] = 0;
-
-            // pink for buildings = 2   (255, 225, 225) ~ (255, 219, 219)
-            else
-              map2D[x][y] = 1;
-              //mapArray.map[y * 640 + x] = 2;
-          }
-
-          // blue for water = 3
-          else if (pixels.get(x, y, 0) == 186 && pixels.get(x, y, 1) == 186 && pixels.get(x, y, 2) >= 250)
-            map2D[x][y] = 1;
-            //mapArray.map[y * 640 + x] = 3;
-
-
-          // default....
-          else {
-            //console.error("the img contains -1 value!!!");
-            map2D[x][y] = 0;
-            //mapArray.map[y * 640 + x] = 1;
-          }
+    client.on('fb', function(fbid) {
+        var clientFBId = fbid.id;
+        console.log("FB got, id = " + clientFBId);
+        clientHashMap[clientId.toString()].fbId = clientFBId;
+        client.broadcast.emit('FB_In', {'fbId': clientFBId, 'clientId': clientId.toString(), 'loc': [mapArray.birthX-27, mapArray.birthY-69]});
+        if (stat == 'one') {
+          io.to(clientId).emit('gameState', { 'gameState': stat });
+          stat = 'wait';
         }
-      }
-      console.log('static map pixel parsed, generate myX, myY...');
-      myX = Math.round(Math.random()*640);
-      myY = Math.round(Math.random()*640);
-      while (x <= 638 && y <=638 &&
-             map2D[myX-1][myY+1] === 0 && map2D[myX][myY+1] === 0 && map2D[myX+1][myY+1] === 0 &&
-             map2D[myX-1][myY] === 0 && map2D[myX][myY] === 0 && map2D[myX+1][myY] === 0 &&
-             map2D[myX-1][myY-1] === 0 && map2D[myX][myY-1] === 0 && map2D[myX+1][myY-1] === 0) {
-        myX = Math.round(Math.random()*640);
-        myY = Math.round(Math.random()*640);
-      }
-      console.log('myX, myY...OK!!, now do the magic converting job');
+        else if (stat == 'stop') {
+          io.to(clientId).emit('gameState', {'gameState': stat});
+          io.to(clientId).emit('mapArray', mapArray);
 
-      magicConvertMap();
-
-      console.log('magic converting job is done!!!!  2D -> 1D');
-
-      for(var x = 0; x != mapSizeX; ++x) {
-        for(var y = 0; y != mapSizeY; ++y) {
-          mapArray.map[y*mapSizeX + x] = map2D[x][y];
         }
-      }
-
-      console.log('=====SEND TO EVERY CLIENT!!!=====');
-
-      stat = 'start';
-      io.emit('mapArray', mapArray);
-
-
+        else {
+          io.to(clientId).emit('gameState', {'gameState': stat});
+        }
     });
+    client.on('center', function(center) {
+        mapArray.lat = center.lat;
+        mapArray.lng = center.lng;
+        console.log('user specified center: (' + center.lat + ', ' + center.lng + ')');
+        getPixels("http://maps.googleapis.com/maps/api/staticmap?center=" + center.lat + "," + center.lng + "&zoom=18&size=640x640&sensor=false&style=feature:all%7Celement:all%7Chue:0xff0000%7Csaturation:100&style=feature:road%7Celement:geometry%7Chue:0x66f934%7Clightness:100&style=feature:water%7Celement:geometry%7Ccolor:0xbbbbff&style=feature:all%7Celement:labels%7Cvisibility:off&style=feature:road%7Celement:labels%7Cvisibility:off", function(err, pixels) {
+          if(err) {
+            console.error("Bad image path!!!!!");
+            return
+          }
+          for(var x = 0; x < 640; x++) {
+            for (var y = 0; y < 640; y++) {
+              //console.log(pixels.get(x,y,2));
+
+
+              // white for road = 0
+              if (pixels.get(x, y, 0) >= 250 && pixels.get(x, y, 1) >= 250 && pixels.get(x, y, 2) >= 250)
+                map2D[x][y] = 0;
+                //mapArray.map[y * 640 + x] = 0;
+
+
+
+              else if (pixels.get(x, y, 0) >= 250) {
+                // red for ground = 1
+                if (pixels.get(x, y, 1) <= 218 && pixels.get(x, y, 2) <= 218)
+                  map2D[x][y] = 0;
+                else if (pixels.get(x, y, 1) >= 226 && pixels.get(x, y, 2) >= 226)
+                  map2D[x][y] = 0;
+
+                // pink for buildings = 2   (255, 225, 225) ~ (255, 219, 219)
+                else
+                  map2D[x][y] = 1;
+                  //mapArray.map[y * 640 + x] = 2;
+              }
+
+              // blue for water = 3
+              else if (pixels.get(x, y, 0) >= 185 && pixels.get(x, y, 1) >= 185 && pixels.get(x, y, 2) >= 250 &&
+                       pixels.get(x, y, 0) <= 188 && pixels.get(x, y, 1) <= 188)
+                map2D[x][y] = 1;
+                //mapArray.map[y * 640 + x] = 3;
+
+
+
+              // default....
+              else {
+                //console.error("the img contains -1 value!!!");
+                map2D[x][y] = 0;
+                //mapArray.map[y * 640 + x] = 1;
+              }
+            }
+          }
+          console.log('static map pixel parsed, generate myX, myY...');
+          mapArray.birthX = Math.round(Math.random()*640);
+          mapArray.birthY = Math.round(Math.random()*640);
+          while (x <= 638 && y <=638 &&
+                 map2D[myX-1][myY+1] === 0 && map2D[myX][myY+1] === 0 && map2D[myX+1][myY+1] === 0 &&
+                 map2D[myX-1][myY] === 0 && map2D[myX][myY] === 0 && map2D[myX+1][myY] === 0 &&
+                 map2D[myX-1][myY-1] === 0 && map2D[myX][myY-1] === 0 && map2D[myX+1][myY-1] === 0) {
+            mapArray.birthX = Math.round(Math.random()*640);
+            mapArray.birthY = Math.round(Math.random()*640);
+          }
+          console.log('myX, myY...OK!!, now do the magic converting job');
+
+          magicConvertMap();
+
+          console.log('magic converting job is done!!!!  2D -> 1D');
+
+          for(var x = 0; x != mapSizeX; ++x) {
+            for(var y = 0; y != mapSizeY; ++y) {
+              mapArray.map[y*mapSizeX + x] = map2D[x][y];
+            }
+          }
+
+          console.log('=====SEND TO EVERY CLIENT!!!=====');
+
+          stat = 'stop';
+            setInterval(updateEveryPlayer, DELAY);
+            io.emit('mapArray', mapArray);
+
+
+        });
+  });
+  client.on('getOtherPlayer', function(id) {
+    for(var key in clientHashMap) {
+        if(key == 'id' || key == 'lobTime') continue;
+      if(key != clientId && clientHashMap[key].fbId != undefined) {
+          io.to(clientId).emit('FB_In', {'fbId': clientHashMap[key].fbId, 'clientId': key , 'loc': clientHashMap[key].loc })
+      }
+    }
   });
   client.on('frame', function(data){
-    //io.emit('frame', data);
-    io.emit('update', {
-
-    });
+      clientHashMap[clientId.toString()].loc = data.loc;
+      clientHashMap[clientId.toString()].score = data.score;
   });
   client.on('disconnect', function(){
-    statistic.numPlayer--;
-    console.log(clientId + 'user disconnected, total user = ' + statistic.numPlayer);
+      statistic.numPlayer--;
+      console.log(clientId + 'user disconnected, total user = ' + statistic.numPlayer);
+      //console.log('dis: clientId = '+ clientId + ', clientId.toS = ' + clientId.toString()+', cHM[].fbId = '+clientHashMap[clientId.toString()].fbId);
+      if(clientHashMap[clientId.toString()].fbId != undefined) {
+          io.emit('FB_Out', {'fbId': clientHashMap[clientId.toString()].fbId, 'clientId': clientId.toString()});
+      }
+      if(clientId.toString() in clientHashMap) {
+          var idx = clientHashMap.id.indexOf(clientId.toString());
+          if (idx != -1) clientHashMap.id = clientHashMap.id.splice(idx, 1);
+          delete clientHashMap[clientId.toString()];
+      }
+      console.log(clientId + 'user disconnected, total user = ' + statistic.numPlayer);
   });
 });
 
 
+function startTheGame() {
+    console.log('times up!! lets start the game!!!!!!!!!!!!!!!!!!!');
+    stat = 'start';
+    io.emit('startGame', {});
+}
+
+
+function updateEveryPlayer() {
+    if (stat == 'stop') {
+        lobbyTime--;
+        clientHashMap.lobTime = lobbyTime*DELAY/1000;
+        if (lobbyTime <= 0)
+            startTheGame();
+    }
+
+    io.emit('update', clientHashMap);
+}
+
 function magicConvertMap() {
-  var check = [20, 10, 5, 3, 2];
+  var check = [50, 40, 30, 20, 10, 5, 3];
 
   for (var x = 0; x < 640; x++){
     for (var y = 0; y < 640; y++){

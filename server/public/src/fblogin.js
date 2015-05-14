@@ -75,15 +75,15 @@
   function testAPI() {
     console.log('Welcome!  Fetching your information.... ');
     FB.api('/me', function(response) {
+        ID = response.id;
 		sendFBID(response.id);
 		console.log('Successful login for: ' + response.name);
 		document.getElementById('status').innerHTML =
-			'Welcome to Map Fight , ' + response.name + '!</br>Please Wait...Game Initializing...';
+			'</br>Welcome to Map Fight , ' + response.name + '!</br>Please Wait...Game Initializing...';
 		document.getElementById('status2').innerHTML =
 			'Welcome to Map Fight , ' + response.name + '!</br>';
 		var im = document.getElementById("profileImage").setAttribute("src", "http://graph.facebook.com/" + ID + "/picture?type=normal");
 		var im = document.getElementById("profileImage").setAttribute("style", "width:50px;height:50px");
 		var im = document.getElementById("profileImage").style.display = "none";
-		ID = response.id;
     });
   }

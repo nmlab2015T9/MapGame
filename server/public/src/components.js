@@ -1,7 +1,9 @@
 // The Grid component allows an element to be located
 //  on a grid of tiles
 shiftX = Math.round(window.innerWidth/2-320), shiftY = Math.round(window.innerHeight/2-320) ;
-myX = shiftX, myY = shiftY;
+lastX = 0;
+lastY = 0;
+nowTime = undefined
 
 Crafty.c('Grid', {
   init: function() {
@@ -11,7 +13,7 @@ Crafty.c('Grid', {
 	  z: 1
     })
   },
- 
+
   // Locate this entity at the given position on the grid
   at: function(x, y) {
     if (x === undefined && y === undefined) {
@@ -28,7 +30,7 @@ Crafty.c('Grid', {
 Crafty.c('Actor', {
   init: function() {
     this.requires('2D, DOM, Grid');
-  },
+  }
 });
  
 // A Tree is just an Actor with a certain color
@@ -36,26 +38,14 @@ Crafty.c('Boundary', {
   init: function() {
     this.requires('Actor, Color, Solid')
       .color('red');
-  },
-});
- 
-// A Bush is just an Actor with a certain color
-Crafty.c('Bush', {
-  init: function() {
-    this.requires('2D, DOM, Color, Solid, spr_bush')
-	.attr({
-      w: 16,
-      h: 16,
-    })
-      .color('rgb(20, 185, 40)');
-  },
+  }
 });
 
 Crafty.c('Buildings', {
   init: function() {
     this.requires('Actor, Color, Solid')
       .color('rgb(20, 185, 40)');
-  },
+  }
 });
 
 Crafty.c('Head', {
@@ -67,9 +57,18 @@ Crafty.c('Head', {
 		x: myX - 13,
 		y: myY - 38,
 		z: 100
-    })
-      .DOM(document.getElementById("profileImage"));
-  },
+    });
+  }
+});
+
+Crafty.c('OtherPlayer', {
+  init: function() {
+    this.requires('Actor, spr_player, SpriteAnimation')
+        /*.animate('OtherPlayerMovingUp',    7, 1, 0)
+        .animate('OtherPlayerMovingRight', 7, 3, 0)
+        .animate('OtherPlayerMovingDown',  7, 6, 0)
+        .animate('OtherPlayerMovingLeft',  7, 4, 0)*/;
+  }
 });
 
 Crafty.c('PlayerPosition',{
@@ -81,7 +80,14 @@ Crafty.c('PlayerPosition',{
 			y: myY + 31
 		})
 		.fourway(2)
-		.stopOnSolids();
+		.stopOnSolids()
+        .bind('EnterFrame', function() {
+          if(lastX != this.x || lastY != this.y) {
+            sendFrame(this.x - shiftX -27, this.y -shiftY -69);
+          }
+          lastX = this.x;
+          lastY = this.y;
+        });
 	},
 	
 	stopOnSolids: function() {
@@ -128,9 +134,38 @@ Crafty.c('PlayerCharacter', {
         this.stop();
       }
     });*/
-  },
+  }
 });
+otherPlayerHead = {};
+otherPlayerBody = {};
+function createOtherPlayer(clientId, fbid, x, y) {
+  console.log('creating other player: '+ clientId + ', fb = ' + fbid);
+  var other = document.createElement('img');
+  other.id='other'+clientId;
+  other.setAttribute("src", "http://graph.facebook.com/" + fbid + "/picture?type=normal");
+  other.setAttribute("style", "width:50px;height:50px;border-radius: 50%");
+  var proimg = document.getElementById('profileImage');
+  var crstage = document.getElementById('cr-stage');
+  crstage.insertBefore(other, proimg);
+  otherPlayerHead[clientId] = Crafty.e('Head').DOM(other).attr({x: x + shiftX -13, y: y + shiftY -38 });
+  otherPlayerBody[clientId] = Crafty.e('OtherPlayer').at(x + shiftX, y + shiftY);
+  otherPlayerHead[clientId].attach(otherPlayerBody[clientId]);
+}
 
+function destroyOtherPlayer(clientId) {
+  console.log('destroy player: '+ clientId);
+  document.getElementById('other'+clientId).remove();
+  if(otherPlayerHead[clientId] != undefined)
+      otherPlayerHead[clientId].destroy();
+  delete otherPlayerHead[clientId];
+  delete otherPlayerBody[clientId];
+}
+
+function setTime(time) {
+  //console.log(time);
+  if(nowTime != undefined)
+    nowTime.text(time);
+}
 
 Crafty.scene('Game', function() {
   // A 2D array to keep track of all occupied tiles
@@ -144,7 +179,7 @@ Crafty.scene('Game', function() {
 
   for (var x = 0; x < 640; x++){
 	  for (var y = 0; y < 640; y++){
-        if (map2D[x][y] != 0) {
+        if (map2D[x][y] >1) {
           Crafty.e('Buildings').attr({
             x: x + shiftX,
             y: y + shiftY,
@@ -154,7 +189,20 @@ Crafty.scene('Game', function() {
         }
 	  }
   }
-  
+
+  document.getElementById("titleAndLogIn").style.display = "none";
+  document.getElementById("map_canvas").setAttribute("style","-webkit-filter:blur(0px)");
+  document.getElementById("cr-stage").style.display = "inherit";
+  document.getElementById("profileImage").style.display = "inherit";
+  document.getElementById("positionChooser").style.display = "none";
+  marker.setVisible(false);
+  sendGetOtherPlayer();
+
+  nowTime = Crafty.e('2D, Canvas, Text')
+      .textFont({size:'120px', weight: 'bold' })
+      .attr({ x: shiftX + 655, y: 150 });
+
+
   // Player character, placed at 5, 5 on our grid
   var animation_speed = 1;
   this.playerPosition = Crafty.e('PlayerPosition').bind('NewDirection', function(data) {
@@ -169,9 +217,9 @@ Crafty.scene('Game', function() {
 		} else {
 			player.stop();
 		}
-    });;
+    });
   this.player = player = Crafty.e('PlayerCharacter').at(myX, myY);
-  this.head = Crafty.e('Head');
+  this.head = Crafty.e('Head').DOM(document.getElementById("profileImage"));
   this.playerPosition.attach(this.player);
   this.playerPosition.attach(this.head);
   
@@ -201,25 +249,28 @@ Crafty.scene('Game', function() {
 						y: shiftY-5,
 						w: 650,
 						h: 5
-					});;
+					});
    Crafty.e('Boundary').attr({
 						x: shiftX-5,
 						y: shiftY-5,
 						w: 5,
 						h: 650
-					});;
+					});
    Crafty.e('Boundary').attr({
 						x: shiftX,
 						y: shiftY+640,
 						w: 645,
 						h: 5
-					});;  
+					});
    Crafty.e('Boundary').attr({
 						x: shiftX+640,
 						y: shiftY,
 						w: 5,
 						h: 645
-					});;
+					});
+
+
+
 
   // Generate up to five villages on the map in random locations
   /*var max_villages = 5;
@@ -283,14 +334,14 @@ Crafty.scene('Loading', function(){
     //  to be drawn with a certain sprite
     Crafty.sprite(16, 'http://desolate-caverns-4829.herokuapp.com/assets/16x16_forest_1.gif', {
       spr_tree:    [0, 0],
-      spr_bush:    [1, 0],
+      spr_bush:    [1, 0]
       //spr_village: [0, 1]
     });
 
     // Define the PC's sprite to be the first sprite in the third row of the
     //  animation sprite map
     Crafty.sprite(28,31, 'assets/character.png', {
-      spr_player:  [0, 7],
+      spr_player:  [0, 7]
     }, 0, 1);
 
    
@@ -311,9 +362,7 @@ Crafty.scene('Loading', function(){
   __move: {left: false, right: false, up: false, down: false},    
   _speed: 0.005,
 
-  CustomControls: function(speed) {
-    if (speed) this._speed = speed;
-    var move = this.__move;
+
 
     this.bind('EnterFrame', function() {
       // Move the player in a direction depending on the booleans
