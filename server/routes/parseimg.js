@@ -39,3 +39,23 @@ module.exports = {
 }
 
 }
+
+
+    for(var x = 0; x != 640; ++x) {
+        for(var y = 0; y != 640; ++y) {
+            map2D[x][y] = mapArray.map[y*640 + x];
+        }
+    }
+    console.log('start');
+    process.stdout.write('[');
+    for(var x = 0; x < 640; x++) {
+        process.stdout.write('[');
+        for (var y = 0; y < 640; y++) {
+            process.stdout.write(map2D[x][y].toString());
+            if (y != 639) process.stdout.write(', ');
+        }
+        process.stdout.write(']');
+        if (x != 639) console.log(', ');
+    }
+    process.stdout.write(']');
+    io.emit('mapArray', mapArray);

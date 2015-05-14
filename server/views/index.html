@@ -12,7 +12,7 @@
     <script src="src/components.js"></script>
     <script src="src/fblogin.js"></script>
     <script src="src/buttoncontrol.js"></script>
-    <script> window.addEventListener('load', Game.start);</script>
+
 </head>
 <body onload="initialize()">
 <link href='http://fonts.googleapis.com/css?family=Tangerine' rel='stylesheet' type='text/css'>
@@ -23,7 +23,7 @@
 <div id="container">
     <div id="titleAndLogIn">
         <h1 id="title"> Map Fight </h1>
-        <div class="fb-login-button" data-max-rows="1" data-size="xlarge" data-show-faces="true" data-auto-logout-link="true"></div>
+        <div class="fb-login-button" data-max-rows="1" data-size="xlarge" data-show-faces="true" data-auto-logout-link="true" onlogin = "testAPI()"></div>
         <div id="status"></div>
     </div>
     <div id="positionChooser">

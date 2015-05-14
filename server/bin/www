@@ -40,13 +40,21 @@ server.on('listening', onListening);
  */
 
 userCount = 0;
-stat = 'wait';
+stat = 'one';
 
 mapArray = {'map': []};
+map2D = new Array(640);
+for (var i = 0; i < 640; ++i) {
+  map2D[i] = new Array(640);
+}
 
 io.on('connection', function(client){
   userCount++;
-  var clientId = client.sessionId;
+  var clientFBId;
+  client.on('fb', function(fbid) {
+    clientFBId = fbid.id;
+    io.emit('gameState', stat);
+  })
   console.log('a user connected, from: ' + clientId + ', total user count = ' + userCount);
   client.on('center', function(center) {
     console.log('user specified center: (' + center.lat + ', ' + center.lng + ')');
@@ -62,13 +70,13 @@ io.on('connection', function(client){
 
 
           // white for road = 0
-          if (pixels.get(x,y,0) >= 250 && pixels.get(x,y,0) >= 250 && pixels.get(x,y,0) >= 250)
+          if (pixels.get(x,y,0) >= 250 && pixels.get(x,y,1) >= 250 && pixels.get(x,y,2) >= 250)
             mapArray.map[y*640+x] = 0;
 
 
           else if (pixels.get(x,y,0) >= 250) {
               // red for ground = 1
-              if (pixels.get(x, y, 0) <= 215 && pixels.get(x, y, 0) <= 215)
+              if (pixels.get(x, y, 1) <= 215 && pixels.get(x, y, 2) <= 215)
                 mapArray.map[y * 640 + x] = 1;
               // pink for buildings = 2   (255, 224, 224)
               else
@@ -76,23 +84,26 @@ io.on('connection', function(client){
           }
 
           // blue for water = 3
-          else if (pixels.get(x,y,0) == 186 && pixels.get(x,y,0) == 186 && pixels.get(x,y,0) >= 250)
+          else if (pixels.get(x,y,0) == 186 && pixels.get(x,y,1) == 186 && pixels.get(x,y,2) >= 250)
             mapArray.map[y*640+x] = 3;
 
 
           // default....
           else {
-            console.error("the img contains -1 value!!!");
-            mapArray.map[y * 640 + x] = -1;
+            //console.error("the img contains -1 value!!!");
+            mapArray.map[y * 640 + x] = 1;
           }
 
-          io.emit('mapArray', mapArray);
         }
       }
+
     });
   });
   client.on('frame', function(data){
-    io.emit('frame', data);
+    //io.emit('frame', data);
+    io.emit('update', {
+
+    });
   });
   client.on('disconnect', function(){
     userCount--;
