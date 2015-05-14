@@ -4,6 +4,7 @@
  * Module dependencies.
  */
 
+
 var app = require('../app');
 var debug = require('debug')('server:server');
 var http = require('http');
@@ -38,11 +39,11 @@ server.on('listening', onListening);
 /**
  * Socketssssss
  */
-
+mapSizeX = 640;
+mapSizeY = 640;
 stat = 'one';
 statistic = {
-  'numPlayer': 0,
-  ''
+  'numPlayer': 0
 };
 
 mapArray = {'map': []};
@@ -52,19 +53,20 @@ for (var i = 0; i < 640; ++i) {
 }
 
 io.on('connection', function(client){
-  client.id;
+  var clientId = client.id;
+  statistic.numPlayer++;
   var clientFBId;
   client.on('fb', function(fbid) {
     clientFBId = fbid.id;
     if (stat == 'one') {
-      ('gameState', stat);
+      io.to(clientId).emit('gameState', { 'gameState': stat });
       stat = 'wait';
     }
     else {
-      io.emit('gameState', stat);
+      io.to(clientId).emit('gameState', stat);
     }
   });
-  console.log('a user connected, from: ' + clientId + ', total user count = ' + userCount);
+  console.log('a user connected, from: ' + clientId + ', total user count = ' +   statistic.numPlayer);
   client.on('center', function(center) {
     console.log('user specified center: (' + center.lat + ', ' + center.lng + ')');
     getPixels("http://maps.googleapis.com/maps/api/staticmap?center=" + center.lat + "," + center.lng + "&zoom=18&size=640x640&sensor=false&style=feature:all%7Celement:all%7Chue:0xff0000%7Csaturation:100&style=feature:road%7Celement:geometry%7Chue:0x66f934%7Clightness:100&style=feature:water%7Celement:geometry%7Ccolor:0xbbbbff&style=feature:all%7Celement:labels%7Cvisibility:off&style=feature:road%7Celement:labels%7Cvisibility:off", function(err, pixels) {
@@ -72,39 +74,69 @@ io.on('connection', function(client){
         console.error("Bad image path!!!!!");
         return
       }
-
       for(var x = 0; x < 640; x++) {
         for (var y = 0; y < 640; y++) {
           //console.log(pixels.get(x,y,2));
 
 
           // white for road = 0
-          if (pixels.get(x,y,0) >= 250 && pixels.get(x,y,1) >= 250 && pixels.get(x,y,2) >= 250)
-            mapArray.map[y*640+x] = 0;
+          if (pixels.get(x, y, 0) >= 250 && pixels.get(x, y, 1) >= 250 && pixels.get(x, y, 2) >= 250)
+            map2D[x][y] = 0;
+            //mapArray.map[y * 640 + x] = 0;
 
 
-          else if (pixels.get(x,y,0) >= 250) {
-              // red for ground = 1
-              if (pixels.get(x, y, 1) <= 215 && pixels.get(x, y, 2) <= 215)
-                mapArray.map[y * 640 + x] = 1;
-              // pink for buildings = 2   (255, 224, 224)
-              else
-                mapArray.map[y * 640 + x] = 2;
+
+          else if (pixels.get(x, y, 0) >= 250) {
+            // red for ground = 1
+            if (pixels.get(x, y, 1) <= 218 && pixels.get(x, y, 2) <= 218)
+              map2D[x][y] = 0;
+            else if (pixels.get(x, y, 1) >= 226 && pixels.get(x, y, 2) >= 226)
+              map2D[x][y] = 0;
+
+            // pink for buildings = 2   (255, 225, 225) ~ (255, 219, 219)
+            else
+              map2D[x][y] = 1;
+              //mapArray.map[y * 640 + x] = 2;
           }
 
           // blue for water = 3
-          else if (pixels.get(x,y,0) == 186 && pixels.get(x,y,1) == 186 && pixels.get(x,y,2) >= 250)
-            mapArray.map[y*640+x] = 3;
+          else if (pixels.get(x, y, 0) == 186 && pixels.get(x, y, 1) == 186 && pixels.get(x, y, 2) >= 250)
+            map2D[x][y] = 1;
+            //mapArray.map[y * 640 + x] = 3;
 
 
           // default....
           else {
             //console.error("the img contains -1 value!!!");
-            mapArray.map[y * 640 + x] = 1;
+            map2D[x][y] = 0;
+            //mapArray.map[y * 640 + x] = 1;
           }
-
         }
       }
+      console.log('static map pixel parsed, generate myX, myY...');
+      myX = Math.round(Math.random()*640);
+      myY = Math.round(Math.random()*640);
+      while (map2D[myX-1][myY+1] === 0 && map2D[myX][myY+1] === 0 && map2D[myX+1][myY+1] === 0 &&
+             map2D[myX-1][myY] === 0 && map2D[myX][myY] === 0 && map2D[myX+1][myY] === 0 &&
+             map2D[myX-1][myY-1] === 0 && map2D[myX][myY-1] === 0 && map2D[myX+1][myY-1] === 0) {
+        myX = Math.round(Math.random()*640);
+        myY = Math.round(Math.random()*640);
+      }
+      console.log('myX, myY...OK!!, now do the magic converting job');
+
+      magicConvertMap();
+
+      console.log('magic converting job is done!!!!  2D -> 1D');
+
+      for(var x = 0; x != mapSizeX; ++x) {
+        for(var y = 0; y != mapSizeY; ++y) {
+          mapArray.map[y*mapSizeX + x] = map2D[x][y];
+        }
+      }
+
+      console.log('=====SEND TO EVERY CLIENT!!!=====');
+
+      io.emit('mapArray', mapArray);
 
     });
   });
@@ -115,11 +147,47 @@ io.on('connection', function(client){
     });
   });
   client.on('disconnect', function(){
-    console.log(clientId + 'user disconnected, total user = ' + userCount);
+    statistic.numPlayer--;
+    console.log(clientId + 'user disconnected, total user = ' + statistic.numPlayer);
   });
 });
 
 
+function magicConvertMap() {
+  var check = [20, 10, 5, 3, 2];
+
+  for (var x = 0; x < 640; x++){
+    for (var y = 0; y < 640; y++){
+      if(map2D[x][y] == 1){
+        for (var a = 0; a < check.length; a++){
+          var OK = 1;
+          for (var ii = 0; ii < check[a]; ii++){
+            for (var jj = 0; jj < check[a]; jj++){
+              if(x+ii < 640 && y+jj < 640 && map2D[x+ii][y+jj] == 0){
+                OK = 0;
+                break;
+              }
+            }
+            if(OK == 0){
+              break;
+            }
+          }
+          if(OK == 1){
+            //console.log(x +", "+ y +"   r= "+check[a]);
+            for (var i = 0; i < check[a]; i++){
+              for (var j = 0; j < check[a]; j++){
+                if(x+i < 640 && y+j < 640){
+                  map2D[x+i][y+j] = 0;
+                }
+              }
+            }
+            map2D[x][y] = check[a];
+          }
+        }
+      }
+    }
+  }
+}
 
 
 

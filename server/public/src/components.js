@@ -1,7 +1,7 @@
 // The Grid component allows an element to be located
 //  on a grid of tiles
 shiftX = Math.round(window.innerWidth/2-320), shiftY = Math.round(window.innerHeight/2-320) ;
-var myX = 518 + shiftX, myY = 543 + shiftY;
+myX = shiftX, myY = shiftY;
 
 Crafty.c('Grid', {
   init: function() {
@@ -142,42 +142,16 @@ Crafty.scene('Game', function() {
     } 
   }
 
-  var check = [20, 10, 5, 3, 2];
-  
   for (var x = 0; x < 640; x++){
 	  for (var y = 0; y < 640; y++){
-		  if(map2D[x][y] >= 2){
-			for (var a = 0; a < check.length; a++){
-				var OK = 1;
-				for (var i = 0; i < check[a]; i++){
-					for (var j = 0; j < check[a]; j++){
-						if(x+i < 640 && y+j < 640 && map2D[x+i][y+j] < 2){
-							OK = 0;
-							break;
-						}
-					}
-					if(OK == 0){
-						break;
-					}
-				}
-				if(OK == 1){
-					console.log(x +", "+ y +"   r= "+check[a]);
-					Crafty.e('Buildings').attr({
-						x: x + shiftX,
-						y: y + shiftY,
-						w: check[a],
-						h: check[a]
-					});
-					for (var i = 0; i < check[a]; i++){
-						for (var j = 0; j < check[a]; j++){
-							if(x+i < 640 && y+j < 640){
-								map2D[x+i][y+j] = 0;
-							}
-						}
-					}
-				}
-			}
-		  }
+        if (map2D[x][y] != 0) {
+          Crafty.e('Buildings').attr({
+            x: x + shiftX,
+            y: y + shiftY,
+            w: map2D[x][y],
+            h: map2D[x][y]
+          });
+        }
 	  }
   }
   

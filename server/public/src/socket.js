@@ -1,6 +1,6 @@
 var socket = io();
-mapSizeX = 600;
-mapSizeY = 600;
+mapSizeX = 640;
+mapSizeY = 640;
 gameState = 'unknown';
 map2D = new Array(mapSizeX);
 for (var i = 0; i < mapSizeX; ++i) {
@@ -15,11 +15,11 @@ function sendFBID(id) {
 socket.on('mapArray', function(mapArray) {
     for(var x = 0; x != mapSizeX; ++x) {
         for(var y = 0; y != mapSizeY; ++y) {
-            map2D[x][y] = mapArray.map[x*mapSizeX + y];
+            map2D[x][y] = mapArray.map[y*mapSizeX + x];
         }
     }
+    console.log('mapArrayCome!!!!');
     mapArrayCome();
-    //console.log(mapArray.map);
 });
 
 socket.on('gameState', function(gs) {
@@ -32,7 +32,7 @@ function sendFrame(x, y) {
         'loc': [x, y]
     });
 }
-function sendCenter(x, y,) {
+function sendCenter(x, y) {
     socket.emit('center', {
         'lat': x,
         'lng': y

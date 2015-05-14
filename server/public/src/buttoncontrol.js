@@ -18,5 +18,5 @@ function CButtonOnClick() {
 					draggable: false,
 					keyboardShortcuts: false,
 					})
-	sendCenter(choosedLocation.latitude, choosedLocation.longitude);
+	sendCenter(choosedLocation.lat(), choosedLocation.lng());
 }
