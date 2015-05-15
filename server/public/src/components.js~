@@ -45,8 +45,8 @@ Crafty.c('Boundary', {
 Crafty.c('Buildings', {
   init: function() {
     this.requires('Actor, Color, Solid')
-      .color('rgb(20, 185, 40)');
-      //.color('none');
+      //.color('rgb(20, 185, 40)');
+      .color('none');
   }
 });
 

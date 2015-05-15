@@ -258,7 +258,7 @@ function updateEveryPlayer() {
 }
 old2D = map2D.slice();
 function magicConvertMap() {
-  var check = [50, 47, 44, 41, 38, 35, 32, 30, 28, 25, 23, 20, 17, 15, 13, 11, 10, 5, 2];
+  var check = [50, 47, 44, 41, 38, 35, 32, 30, 28, 25, 23, 20, 17, 15, 13, 11, 10, 5];
 
   for (var x = 0; x < 640; x++){
     for (var y = 0; y < 640; y++){
