@@ -143,14 +143,15 @@ io.on('connection', function(client){
           console.log('static map pixel parsed, generate myX, myY...');
           mapArray.birthX = Math.round(Math.random()*640);
           mapArray.birthY = Math.round(Math.random()*640);
-          while (x <= 638 && y <=638 &&
-                 map2D[myX-1][myY+1] === 0 && map2D[myX][myY+1] === 0 && map2D[myX+1][myY+1] === 0 &&
-                 map2D[myX-1][myY] === 0 && map2D[myX][myY] === 0 && map2D[myX+1][myY] === 0 &&
-                 map2D[myX-1][myY-1] === 0 && map2D[myX][myY-1] === 0 && map2D[myX+1][myY-1] === 0) {
+
+          while (!(mapArray.birthY <= 638 && mapArray.birthY <=638 &&
+                 map2D[mapArray.birthX-1][mapArray.birthY+1] === 0 && map2D[mapArray.birthX][mapArray.birthY+1] === 0 && map2D[mapArray.birthX+1][mapArray.birthY+1] === 0 &&
+                 map2D[mapArray.birthX-1][mapArray.birthY] === 0 && map2D[mapArray.birthX][mapArray.birthY] === 0 && map2D[mapArray.birthX+1][mapArray.birthY] === 0 &&
+                 map2D[mapArray.birthX-1][mapArray.birthY-1] === 0 && map2D[mapArray.birthX][mapArray.birthY-1] === 0 && map2D[mapArray.birthX+1][mapArray.birthY-1] === 0)) {
             mapArray.birthX = Math.round(Math.random()*640);
             mapArray.birthY = Math.round(Math.random()*640);
           }
-          console.log('myX, myY...OK!!, now do the magic converting job');
+          console.log('myX = '+ mapArray.birthX +', myY = ' + mapArray.birthY );
 
           magicConvertMap();
 
@@ -183,6 +184,15 @@ io.on('connection', function(client){
       clientHashMap[clientId.toString()].loc = data.loc;
       clientHashMap[clientId.toString()].score = data.score;
   });
+
+  client.on('eaten', function(data) {
+      if(data.id != undefined) {
+          client.broadcast.emit('destroyMush', {id: data.id, type: data.type});
+          console.log('got eaten, id = ', data.id);
+          setTimeout(spawnMush, 5000, data.type, data.id);
+      }
+  });
+
   client.on('disconnect', function(){
       statistic.numPlayer--;
       console.log(clientId + 'user disconnected, total user = ' + statistic.numPlayer);
@@ -195,7 +205,6 @@ io.on('connection', function(client){
           if (idx != -1) clientHashMap.id = clientHashMap.id.splice(idx, 1);
           delete clientHashMap[clientId.toString()];
       }
-      console.log(clientId + 'user disconnected, total user = ' + statistic.numPlayer);
   });
 });
 
@@ -203,7 +212,37 @@ io.on('connection', function(client){
 function startTheGame() {
     console.log('times up!! lets start the game!!!!!!!!!!!!!!!!!!!');
     stat = 'start';
-    io.emit('startGame', {});
+    io.emit('startGame', { haha: 'Fight!!' });
+    spawnMush('Z', 0);
+    for (var i = 1; i != 5; ++i) {
+        spawnMush('G', i);
+    }
+    for (var i = 5; i != 9; ++i) {
+        spawnMush('S', i);
+    }
+}
+
+function spawnMush(type, idd) {
+    console.log('spawning Mush, id = '+ idd);
+    var xxx = Math.round(Math.random()*640);
+    var yyy = Math.round(Math.random()*640);
+    while (!(xxx <= 638 && yyy <=638 &&
+    map2D[xxx-1][yyy+1] === 0 && map2D[xxx][yyy+1] === 0 && map2D[xxx+1][yyy+1] === 0 &&
+    map2D[xxx-1][yyy] === 0 && map2D[xxx][yyy] === 0 && map2D[xxx+1][yyy] === 0 &&
+    map2D[xxx-1][yyy-1] === 0 && map2D[xxx][yyy-1] === 0 && map2D[xxx+1][yyy-1] === 0)) {
+        xxx = Math.round(Math.random()*640);
+        yyy = Math.round(Math.random()*640);
+    }
+
+    if(type == 'G') {
+        io.emit('mushroom', { type: 'G', id: idd, x: xxx, y: yyy });
+    }
+    else if(type == 'S') {
+        io.emit('mushroom', { type: 'S', id: idd, x: xxx, y: yyy });
+    }
+    else if(type == 'Z') {
+        io.emit('mushroom', { type: 'Z', id: idd, x: xxx, y: yyy });
+    }
 }
 
 
@@ -217,7 +256,7 @@ function updateEveryPlayer() {
 
     io.emit('update', clientHashMap);
 }
-
+old2D = map2D.slice();
 function magicConvertMap() {
   var check = [50, 40, 30, 20, 10, 5, 3];
 

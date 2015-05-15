@@ -3,7 +3,8 @@
 shiftX = Math.round(window.innerWidth/2-320), shiftY = Math.round(window.innerHeight/2-320) ;
 lastX = 0;
 lastY = 0;
-nowTime = undefined
+nowTime = undefined;
+myP = undefined;
 
 Crafty.c('Grid', {
   init: function() {
@@ -44,7 +45,8 @@ Crafty.c('Boundary', {
 Crafty.c('Buildings', {
   init: function() {
     this.requires('Actor, Color, Solid')
-      .color('rgb(20, 185, 40)');
+      //.color('rgb(20, 185, 40)');
+      .color('none');
   }
 });
 
@@ -61,6 +63,88 @@ Crafty.c('Head', {
   }
 });
 
+myPoint = 0;
+Crafty.c('ZMushroom', {
+  id: 0,
+  init: function() {
+    this.requires('Actor, spr_ZMushroom, SpriteAnimation')
+        .animate('ZMushroomStanding',  0, 1, 3);
+    var animation_speed = 30;
+    this.bind('EnterFrame', function(){this.animate('ZMushroomStanding', animation_speed, -1)}
+    );
+  },
+  setId: function(i) {
+    this.id = i;
+    return this;
+  },
+  getId: function(i) {
+    this.id = i;
+    return this;
+  },
+  // Process a visitation with this village
+  visit: function() {
+    console.log('z is visited');
+    eatenMush(this.id, 'Z');
+    this.destroy();
+    Crafty.trigger('ZMushroomVisited', this);
+  }
+});
+
+Crafty.c('GMushroom', {
+  id:0,
+  init: function() {
+    this.requires('Actor, spr_GMushroom, SpriteAnimation')
+        .animate('GMushroomStanding',  0, 1, 4);
+    var animation_speed = 30;
+    this.bind('EnterFrame', function(e){this.animate('GMushroomStanding', animation_speed, -1)}
+    );
+  },
+
+  // Process a visitation with this village
+  visit: function() {
+    eatenMush(this.id, 'G');
+    this.destroy();
+    myPoint++;
+    myP.text(myPoint);
+    Crafty.trigger('GMushroomVisited', this);
+  },
+  setId: function(i) {
+    this.id = i;
+    return this;
+  },
+  getId: function() {
+    return this.id;
+  }
+});
+
+Crafty.c('SMushroom', {
+  id:0,
+  init: function() {
+    this.requires('Actor, spr_SMushroom, SpriteAnimation')
+        .animate('SMushroomStanding',  0, 1, 4);
+    var animation_speed = 30;
+    this.bind('EnterFrame', function(e){this.animate('SMushroomStanding', animation_speed, -1)}
+    );
+  },
+
+  // Process a visitation with this village
+  visit: function() {
+    eatenMush(this.id, 'S');
+    myPoint--;
+    myP.text(myPoint);
+    this.destroy();
+    Crafty.trigger('SMushroomVisited', this);
+  },
+  setId: function(i) {
+    this.id = i;
+    return this;
+  },
+  getId: function() {
+    return this.id;
+  }
+});
+
+
 Crafty.c('OtherPlayer', {
   init: function() {
     this.requires('Actor, spr_player, SpriteAnimation')
@@ -71,6 +155,7 @@ Crafty.c('OtherPlayer', {
   }
 });
 
+mySpeed = 1;
 Crafty.c('PlayerPosition',{
  init: function() {
     this.requires('Actor, Fourway, Color, Collision')
@@ -79,7 +164,10 @@ Crafty.c('PlayerPosition',{
 			x: myX + 14,
 			y: myY + 31
 		})
-		.fourway(2)
+		.fourway(mySpeed)
+        .onHit('ZMushroom', this.visitZMushroom)
+        .onHit('GMushroom', this.visitGMushroom)
+        .onHit('SMushroom', this.visitSMushroom)
 		.stopOnSolids()
         .bind('EnterFrame', function() {
           if(lastX != this.x || lastY != this.y) {
@@ -103,11 +191,25 @@ Crafty.c('PlayerPosition',{
 			this.y -= this._movement.y;
 		}
 	},
-	
-	// Respond to this player visiting a village
-	visitVillage: function(data) {
-		villlage = data[0].obj;
-		villlage.visit();
+
+  visitZMushroom: function(data) {
+    ZMushroom = data[0].obj;
+    mySpeed++;
+    this.fourway(mySpeed);
+    this.stopOnSolids();
+    ZMushroom.visit();
+    setTimeout(function() {mySpeed--;
+      BOSS.fourway(mySpeed);
+      BOSS.stopOnSolids();
+      }, 10000);
+  } ,
+  visitGMushroom: function(data) {
+    GMushroom = data[0].obj;
+    GMushroom.visit();
+  } ,
+  visitSMushroom: function(data) {
+    SMushroom = data[0].obj;
+    SMushroom.visit();
 	} 
 });
 
@@ -119,21 +221,6 @@ Crafty.c('PlayerCharacter', {
       .animate('PlayerMovingRight', 7, 3, 0)
       .animate('PlayerMovingDown',  7, 6, 0)
       .animate('PlayerMovingLeft',  7, 4, 0);
-
-      /*var animation_speed = 1;
-      this.bind('NewDirection', function(data) {
-      if (data.x > 0) {
-        this.animate('PlayerMovingRight', animation_speed, -1);
-      } else if (data.x < 0) {
-        this.animate('PlayerMovingLeft', animation_speed, -1);
-      } else if (data.y > 0) {
-        this.animate('PlayerMovingDown', animation_speed, -1);
-      } else if (data.y < 0) {
-        this.animate('PlayerMovingUp', animation_speed, -1);
-      } else {
-        this.stop();
-      }
-    });*/
   }
 });
 otherPlayerHead = {};
@@ -153,12 +240,47 @@ function createOtherPlayer(clientId, fbid, x, y) {
 }
 
 function destroyOtherPlayer(clientId) {
-  console.log('destroy player: '+ clientId);
-  document.getElementById('other'+clientId).remove();
-  if(otherPlayerHead[clientId] != undefined)
-      otherPlayerHead[clientId].destroy();
-  delete otherPlayerHead[clientId];
-  delete otherPlayerBody[clientId];
+    otherPNum--;
+    console.log('destroy player: '+ clientId);
+    document.getElementById('other'+clientId).remove();
+    document.getElementById('score'+clientId).remove();
+    otherP[clientId].textFont({size: '0px'});
+    if(otherPlayerHead[clientId] != undefined)
+        otherPlayerHead[clientId].destroy();
+    if(otherP[clientId] != undefined)
+        otherP[clientId].destroy();
+    if(otherPH[clientId] != undefined)
+        otherPH[clientId].destroy();
+
+    delete otherP[clientId];
+    delete otherPH[clientId];
+    delete otherPlayerHead[clientId];
+    delete otherPlayerBody[clientId];
+}
+
+otherP = {};
+otherPH= {};
+otherPNum = 0;
+offsets = 60;
+
+function newOtherScore(clientId, fbid){
+  otherPNum++;
+  var other = document.createElement('img');
+  other.id='score'+clientId;
+  other.setAttribute("src", "http://graph.facebook.com/" + fbid + "/picture?type=normal");
+  other.setAttribute("style", "width:100px;height:100px;border-radius: 50%");
+  var proimg = document.getElementById('profileImage');
+  var crstage = document.getElementById('cr-stage');
+  crstage.insertBefore(other, proimg);
+  otherPH[clientId] = Crafty.e('Head').DOM(other).attr({x: shiftX -200, y: shiftY +offsets*otherPNum});
+  otherP[clientId] = Crafty.e('2D, DOM, Text')
+      .textFont({ size:'50px', weight: 'bold'})
+      .attr({ x: shiftX -90, y: shiftY +offsets*otherPNum })
+      .text(0);
+}
+
+function updateOtherScore(clientId, score){
+  otherP[clientId].text(score);
 }
 
 function setTime(time) {
@@ -166,6 +288,23 @@ function setTime(time) {
   if(nowTime != undefined)
     nowTime.text(time);
 }
+
+function setFight() {
+  console.log('setFight');
+  nowTime.textFont({ size: '0px'});
+}
+
+mushrooms = {};
+
+BOSS = undefined;
+function placeMushroom(type, id, x, y){
+  if(type == 'Z')
+    mushrooms[id] = Crafty.e('ZMushroom').at(x + shiftX, y + shiftY).setId(id);
+  else if(type == 'G')
+    mushrooms[id] = Crafty.e('GMushroom').at(x + shiftX, y + shiftY).setId(id);
+  else if(type == 'S')
+    mushrooms[id] = Crafty.e('SMushroom').at(x + shiftX, y + shiftY).setId(id);
+};
 
 Crafty.scene('Game', function() {
   // A 2D array to keep track of all occupied tiles
@@ -198,9 +337,23 @@ Crafty.scene('Game', function() {
   marker.setVisible(false);
   sendGetOtherPlayer();
 
-  nowTime = Crafty.e('2D, Canvas, Text')
+  nowTime = Crafty.e('2D, DOM, Text')
       .textFont({size:'120px', weight: 'bold' })
       .attr({ x: shiftX + 655, y: 150 });
+
+  myP = Crafty.e('2D, DOM, Text')
+      .textFont({ size:'50px', weight: 'bold'})
+      .attr({ x: shiftX-90, y: shiftY})
+      .text(myPoint);
+
+  var myPHead = document.createElement('img');
+  myPHead.id = 'myphead';
+  myPHead.setAttribute("src", "http://graph.facebook.com/" + ID + "/picture?type=normal");
+  myPHead.setAttribute("style", "width:100px;height:100px;border-radius: 50%");
+  var proimg = document.getElementById('profileImage');
+  var crstage = document.getElementById('cr-stage');
+  crstage.insertBefore(myPHead, proimg);
+  Crafty.e('Head').DOM(myPHead).attr({x: shiftX -200, y: shiftY});
 
 
   // Player character, placed at 5, 5 on our grid
@@ -218,6 +371,7 @@ Crafty.scene('Game', function() {
 			player.stop();
 		}
     });
+  BOSS = this.playerPosition;
   this.player = player = Crafty.e('PlayerCharacter').at(myX, myY);
   this.head = Crafty.e('Head').DOM(document.getElementById("profileImage"));
   this.playerPosition.attach(this.player);
@@ -225,25 +379,7 @@ Crafty.scene('Game', function() {
   
   this.occupied[this.player.at().x][this.player.at().y] = true;
 
-  // Place a tree at every edge square on our grid of 16x16 tiles
-  /*for (var x = Game.map_grid.width - 641; x < Game.map_grid.width; x++) {
-    for (var y = Game.map_grid.height - 641; y < Game.map_grid.height; y++) {
-      var at_edge = x ==  Game.map_grid.width - 641 || x == Game.map_grid.width - 1 || y == Game.map_grid.height - 641 || y == Game.map_grid.height - 1;
 
-      if (at_edge) {
-        // Place a tree entity at the current tile
-        Crafty.e('Tree').at(x , y);
-        this.occupied[x][y] = true;
-      } else if (Math.random() < 0.0001 && !this.occupied[x][y]) {
-        // Place a bush entity at the current tile
-        Crafty.e('Bush').attr({
-	  x: x + shiftX,
-	  y: y + shiftY
-    });
-        this.occupied[x][y] = true;
-      }
-    }
-  }*/
    Crafty.e('Boundary').attr({
 						x: shiftX-5,
 						y: shiftY-5,
@@ -268,78 +404,31 @@ Crafty.scene('Game', function() {
 						w: 5,
 						h: 645
 					});
+});
 
 
 
-
-  // Generate up to five villages on the map in random locations
-  /*var max_villages = 5;
-  for (var x = 0; x < Game.map_grid.width; x++) {
-    for (var y = 0; y < Game.map_grid.height; y++) {
-      if (Math.random() < 0.02) {
-        if (Crafty('Village').length < max_villages && !this.occupied[x][y]) {
-          Crafty.e('Village').at(x, y);
-        }
-      }
-    }
-  }*/
-
-  // Show the victory screen once all villages are visisted
-  /*this.show_victory = this.bind('VillageVisited', function() {
-    if (!Crafty('Village').length) {
-      Crafty.scene('Victory');
-    }
-  });*/
-}/*, function() {
-  // Remove our event binding from above so that we don't
-  //  end up having multiple redundant event watchers after
-  //  multiple restarts of the game
-  this.unbind('VillageVisited', this.show_victory);
-}*/);
-
-
-// Victory scene
-// -------------
-// Tells the player when they've won and lets them start a new game
-/*Crafty.scene('Victory', function() {
-  // Display some text in celebration of the victory
-  Crafty.e('2D, DOM, Text')
-    .attr({ x: 0, y: 0 })
-    .text('Victory!');
-
-  // Watch for the player to press a key, then restart the game
-  //  when a key is pressed
-  this.restart_game = this.bind('KeyDown', function() {
-    Crafty.scene('Game');
-  });
-}, function() {
-  // Remove our event binding from above so that we don't
-  //  end up having multiple redundant event watchers after
-  //  multiple restarts of the game
-  this.unbind('KeyDown', this.restart_game);
-});*/
 
 // Loading scene
 // -------------
 // Handles the loading of binary assets such as images and audio files
 Crafty.scene('Loading', function(){
   // Load our sprite map image
-  Crafty.load(['assets/character.png','http://desolate-caverns-4829.herokuapp.com/assets/16x16_forest_1.gif'], function(){
+  Crafty.load(['assets/character.png','assets/zombie_mushroom.png','assets/good_mushroom.png','assets/sick_mushroom.png'], function(){
     // Once the images are loaded...
 
-    // Define the individual sprites in the image
-    // Each one (spr_tree, etc.) becomes a component
-    // These components' names are prefixed with "spr_"
-    //  to remind us that they simply cause the entity
-    //  to be drawn with a certain sprite
-    Crafty.sprite(16, 'http://desolate-caverns-4829.herokuapp.com/assets/16x16_forest_1.gif', {
-      spr_tree:    [0, 0],
-      spr_bush:    [1, 0]
-      //spr_village: [0, 1]
+    Crafty.sprite(30,32,  'assets/zombie_mushroom.png', {
+      spr_ZMushroom: [0, 0]
     });
 
-    // Define the PC's sprite to be the first sprite in the third row of the
-    //  animation sprite map
+    Crafty.sprite(39,34,  'assets/good_mushroom.png', {
+      spr_GMushroom: [0, 0]
+    });
+
+    Crafty.sprite(30,29,  'assets/sick_mushroom.png', {
+      spr_SMushroom: [0, 0]
+    });
+
     Crafty.sprite(28,31, 'assets/character.png', {
       spr_player:  [0, 7]
     }, 0, 1);
@@ -356,45 +445,3 @@ Crafty.scene('Loading', function(){
     Crafty.scene('Game');
   })
 });
-
-/*Crafty.c('CustomControls', {
-  _loc: {lat: 25.0159, lng: 121.5392},
-  __move: {left: false, right: false, up: false, down: false},    
-  _speed: 0.005,
-
-
-
-    this.bind('EnterFrame', function() {
-      // Move the player in a direction depending on the booleans
-      // Only move the player in one direction at a time (up/down/left/right)
-      if (move.right) this._loc.lng += this._speed;
-      if (move.left) this._loc.lng -= 	this._speed;
-      if (move.up) this._loc.lat += this._speed;
-      if (move.down) this._loc.lat -= this._speed;
-      //panMap(this._loc);
-    })
-    .bind('KeyDown', function(e) {
-      // Default movement booleans to false
-      //move.right = move.left = move.down = move.up = false;
-
-      // If keys are down, set the direction
-      if (e.keyCode === Crafty.keys.D) move.right = true;
-      if (e.keyCode === Crafty.keys.A) move.left = true;
-      if (e.keyCode === Crafty.keys.W) move.up = true;
-      if (e.keyCode === Crafty.keys.S) move.down = true;
-
-      //this.preventTypeaheadFind(e);
-    })
-    .bind('KeyUp', function(e) {
-      // If key is released, stop moving
-      if (e.keyCode === Crafty.keys.D) move.right = false;
-      if (e.keyCode === Crafty.keys.A) move.left = false;
-      if (e.keyCode === Crafty.keys.W) move.up = false;
-      if (e.keyCode === Crafty.keys.S) move.down = false;
-
-      //this.preventTypeaheadFind(e);
-    });
-
-    return this;
-  }
-});*/

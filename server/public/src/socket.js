@@ -24,8 +24,8 @@ socket.on('mapArray', function(mapArray) {
             map2D[x][y] = mapArray.map[y*mapSizeX + x];
         }
     }
-    myX = shiftX + mapArray.birthX;
-    myY = shiftY + mapArray.birthY;
+    myX = shiftX + mapArray.birthX -14;
+    myY = shiftY + mapArray.birthY -31;
     centerLat = mapArray.lat;
     centerLng = mapArray.lng;
     console.log('mapArrayCome!!!!');
@@ -41,6 +41,7 @@ socket.on('FB_In', function(fb) {
     otherPlayerData[fb.fbId] = { x: myX, y: myY, score: 0 };
     if(gameState == 'stop' || gameState == 'one') {
         createOtherPlayer(fb.clientId, fb.fbId, fb.loc[0], fb.loc[1]);
+        newOtherScore(fb.clientId, fb.fbId);
     }
 });
 
@@ -58,7 +59,7 @@ socket.on('FB_Out', function(fb) {
 function sendFrame(x, y) {
     socket.emit('frame', {
         'loc': [x, y],
-        'score': 0
+        'score': myPoint
     });
 }
 function sendCenter(x, y) {
@@ -68,9 +69,9 @@ function sendCenter(x, y) {
     });
 }
 
-socket.on('startGame', function() {
+socket.on('startGame', function(data) {
     gameState = 'start';
-    //call some shit;//TODO
+    setFight();
 });
 
 socket.on('update', function(data) {
@@ -89,7 +90,23 @@ socket.on('update', function(data) {
                     x: data[id].loc[0] + shiftX,
                     y: data[id].loc[1] + shiftY
                 });
+                updateOtherScore(id, data[id].score);
             }
         }
     }
+});
+
+socket.on('mushroom', function(mush) {
+    //console.log('S - > C : mushroom (spawn)' + mush.id);
+    placeMushroom(mush.type, mush.id, mush.x, mush.y);
+});
+
+function eatenMush(idd, ttt) {
+    console.log('C - > S : eaten = '+ idd);
+    socket.emit('eaten', { id: idd, type: ttt});
+}
+
+socket.on('destroyMush', function(data) {
+    console.log('S - > C : destroyMush');
+    mushrooms[data.id].destroy();
 });
