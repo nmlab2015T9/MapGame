@@ -45,8 +45,8 @@ Crafty.c('Boundary', {
 Crafty.c('Buildings', {
   init: function() {
     this.requires('Actor, Color, Solid')
-      .color('rgb(20, 185, 40)');
-      //.color('none');
+      //.color('rgb(20, 185, 40)');
+      .color('none');
   }
 });
 
@@ -289,9 +289,39 @@ function setTime(time) {
     nowTime.text(time);
 }
 
-function setFight() {
-  console.log('setFight');
+function setEndGame() {
+  console.log('setting end game screen');
   nowTime.textFont({ size: '0px'});
+}
+
+firstPlaceHead = {};
+function setCeremonyScreen(clientId, fbid){
+  var firstPlace = document.createElement('img');
+  firstPlace.setAttribute("src", "http://graph.facebook.com/" + fbid + "/picture?type=normal");
+  firstPlace.setAttribute("style", "width:100px;height:100px;border-radius: 50%");
+  var proimg = document.getElementById('profileImage');
+  var crstage = document.getElementById('cr-stage');
+  crstage.insertBefore(firstPlace, proimg);
+  firstPlaceHead[clientId] = Crafty.e('Head').DOM(firstPlace).attr({x: Math.round(window.innerWidth/2-150), y: Math.round(window.innerHeight/2-150), w: 300, h: 300});
+  firstPlaceText = Crafty.e('2D, DOM, Text')
+      .text('Champion')
+      .textFont({size:'120px', weight: 'bold', family:'Tangerine' })
+      .attr({ x: Math.round(window.innerWidth/2-170), y: Math.round(window.innerHeight/2-320) });
+  document.getElementById("map_canvas").setAttribute("style","-webkit-filter:blur(4px)");
+
+
+  setTimeout(function() {
+    Crafty.stop();
+    //write some shitsssss
+  }, 5000);
+
+  for (var i = 0; i < 9; i++){
+    mushrooms[i].destroy();
+  }
+  boundary1.destroy();
+  boundary2.destroy();
+  boundary3.destroy();
+  boundary4.destroy();
 }
 
 mushrooms = {};
@@ -358,7 +388,7 @@ Crafty.scene('Game', function() {
 
   // Player character, placed at 5, 5 on our grid
   var animation_speed = 1;
-  this.playerPosition = Crafty.e('PlayerPosition').bind('NewDirection', function(data) {
+  this.playerPosition = playerPosition = Crafty.e('PlayerPosition').bind('NewDirection', function(data) {
 		if (data.x > 0) {
 			player.animate('PlayerMovingRight', animation_speed, -1);
 		} else if (data.x < 0) {
@@ -380,25 +410,25 @@ Crafty.scene('Game', function() {
   this.occupied[this.player.at().x][this.player.at().y] = true;
 
 
-   Crafty.e('Boundary').attr({
+  boundary1 = Crafty.e('Boundary').attr({
 						x: shiftX-5,
 						y: shiftY-5,
 						w: 650,
 						h: 5
 					});
-   Crafty.e('Boundary').attr({
+  boundary2 =  Crafty.e('Boundary').attr({
 						x: shiftX-5,
 						y: shiftY-5,
 						w: 5,
 						h: 650
 					});
-   Crafty.e('Boundary').attr({
+  boundary3 =  Crafty.e('Boundary').attr({
 						x: shiftX,
 						y: shiftY+640,
 						w: 645,
 						h: 5
 					});
-   Crafty.e('Boundary').attr({
+  boundary4 =  Crafty.e('Boundary').attr({
 						x: shiftX+640,
 						y: shiftY,
 						w: 5,

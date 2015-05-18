@@ -212,6 +212,7 @@ io.on('connection', function(client){
 function startTheGame() {
     console.log('times up!! lets start the game!!!!!!!!!!!!!!!!!!!');
     stat = 'start';
+    lobbyTime = 1500;
     io.emit('startGame', { haha: 'Fight!!' });
     spawnMush('Z', 0);
     for (var i = 1; i != 5; ++i) {
@@ -221,27 +222,48 @@ function startTheGame() {
         spawnMush('S', i);
     }
 }
+var scoreArray = [];
+function endTheGame(){
+    console.log('times up!! Game Over~~~');
+    io.emit('endGame');
+    stat = 'ceremony';
+
+    for(var key in clientHashMap) {
+        if(key == 'id' || key == 'lobTime') continue;
+        scoreArray.push(clientHashMap[key].score);
+    }
+    scoreArray.sort(function(a, b){return b-a});
+    for(var key in clientHashMap) {
+        if(key == 'id' || key == 'lobTime') continue;
+        if(clientHashMap[key].score == scoreArray[0]) {
+            console.log('The first place is ' + clientHashMap[key].fbId + ' ,and his score is ' + clientHashMap[key].score);
+            io.emit('Ceremony', {'fbId': clientHashMap[key].fbId, 'clientId': key})
+        }
+    }
+}
 
 function spawnMush(type, idd) {
-    console.log('spawning Mush, id = '+ idd);
-    var xxx = Math.round(Math.random()*640);
-    var yyy = Math.round(Math.random()*640);
-    while (!(xxx <= 638 && yyy <=638 &&
-    map2D[xxx-1][yyy+1] === 0 && map2D[xxx][yyy+1] === 0 && map2D[xxx+1][yyy+1] === 0 &&
-    map2D[xxx-1][yyy] === 0 && map2D[xxx][yyy] === 0 && map2D[xxx+1][yyy] === 0 &&
-    map2D[xxx-1][yyy-1] === 0 && map2D[xxx][yyy-1] === 0 && map2D[xxx+1][yyy-1] === 0)) {
-        xxx = Math.round(Math.random()*640);
-        yyy = Math.round(Math.random()*640);
-    }
+    if (lobbyTime > 0) {
+        console.log('spawning Mush, id = ' + idd);
+        var xxx = Math.round(Math.random() * 640);
+        var yyy = Math.round(Math.random() * 640);
+        while (!(xxx <= 638 && yyy <= 638 &&
+        map2D[xxx - 1][yyy + 1] === 0 && map2D[xxx][yyy + 1] === 0 && map2D[xxx + 1][yyy + 1] === 0 &&
+        map2D[xxx - 1][yyy] === 0 && map2D[xxx][yyy] === 0 && map2D[xxx + 1][yyy] === 0 &&
+        map2D[xxx - 1][yyy - 1] === 0 && map2D[xxx][yyy - 1] === 0 && map2D[xxx + 1][yyy - 1] === 0)) {
+            xxx = Math.round(Math.random() * 640);
+            yyy = Math.round(Math.random() * 640);
+        }
 
-    if(type == 'G') {
-        io.emit('mushroom', { type: 'G', id: idd, x: xxx, y: yyy });
-    }
-    else if(type == 'S') {
-        io.emit('mushroom', { type: 'S', id: idd, x: xxx, y: yyy });
-    }
-    else if(type == 'Z') {
-        io.emit('mushroom', { type: 'Z', id: idd, x: xxx, y: yyy });
+        if (type == 'G') {
+            io.emit('mushroom', {type: 'G', id: idd, x: xxx, y: yyy});
+        }
+        else if (type == 'S') {
+            io.emit('mushroom', {type: 'S', id: idd, x: xxx, y: yyy});
+        }
+        else if (type == 'Z') {
+            io.emit('mushroom', {type: 'Z', id: idd, x: xxx, y: yyy});
+        }
     }
 }
 
@@ -252,6 +274,13 @@ function updateEveryPlayer() {
         clientHashMap.lobTime = lobbyTime*DELAY/1000;
         if (lobbyTime <= 0)
             startTheGame();
+    }
+
+    else if (stat == 'start'){
+        lobbyTime--;
+        clientHashMap.lobTime = lobbyTime*DELAY/1000;
+        if (lobbyTime <= 0)
+            endTheGame();
     }
 
     io.emit('update', clientHashMap);

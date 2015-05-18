@@ -45,6 +45,11 @@ socket.on('FB_In', function(fb) {
     }
 });
 
+socket.on('Ceremony', function(firstPlace){
+    console.log('setting ceremony screen');
+    setCeremonyScreen(firstPlace.clientId, firstPlace.fbId);
+});
+
 function sendGetOtherPlayer() {
     socket.emit('getOtherPlayer', { 'fbId': ID });
 }
@@ -71,8 +76,12 @@ function sendCenter(x, y) {
 
 socket.on('startGame', function(data) {
     gameState = 'start';
-    setFight();
 });
+
+socket.on('endGame', function(data) {
+    setEndGame();
+});
+
 
 socket.on('update', function(data) {
     // if(gameState == 'start') //TODO
